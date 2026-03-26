@@ -28,4 +28,23 @@ export const BusinessProfileSchema = z.object({
   updatedAt: TimestampSchema,
 });
 
+export const BusinessProfileInputSchema = BusinessProfileSchema.omit({
+  id: true,
+  userId: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const BusinessProfileCreateSchema = BusinessProfileInputSchema;
+
+export const BusinessProfileUpdateSchema = BusinessProfileInputSchema.partial().refine(
+  (value) => Object.keys(value).length > 0,
+  {
+    message: "At least one business profile field must be provided for updates",
+  },
+);
+
 export type BusinessProfile = z.infer<typeof BusinessProfileSchema>;
+export type BusinessProfileCreate = z.infer<typeof BusinessProfileCreateSchema>;
+export type BusinessProfileInput = z.infer<typeof BusinessProfileInputSchema>;
+export type BusinessProfileUpdate = z.infer<typeof BusinessProfileUpdateSchema>;

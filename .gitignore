@@ -1,0 +1,25 @@
+# Node and JS tooling
+node_modules/
+.pnpm-store/
+.turbo/
+.next/
+dist/
+coverage/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# Environment and local config
+.env
+.env.local
+.env.*.local
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

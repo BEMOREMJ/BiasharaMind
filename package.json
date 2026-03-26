@@ -1,0 +1,12 @@
+{
+  "name": "biasharamind",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @biasharamind/web dev",
+    "build:web": "pnpm --filter @biasharamind/web build",
+    "lint:web": "pnpm --filter @biasharamind/web lint",
+    "typecheck:web": "pnpm --filter @biasharamind/web exec tsc --noEmit",
+    "typecheck:shared": "pnpm --filter @biasharamind/shared exec tsc --noEmit"
+  }
+}

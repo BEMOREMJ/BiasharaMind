@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "BiasharaMind API"
     app_version: str = "0.1.0"
     api_v1_prefix: str = ""
+    cors_origins: list[str] = ["http://localhost:3000"]
     debug: bool = False
 
     model_config = SettingsConfigDict(
