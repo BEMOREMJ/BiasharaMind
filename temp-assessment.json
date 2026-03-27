@@ -1,0 +1,25 @@
+{
+  "version": "v1",
+  "sections": [
+    {
+      "key": "operations",
+      "title": "Operations",
+      "description": "How daily operations are currently managed.",
+      "order": 1
+    }
+  ],
+  "answers": [
+    {
+      "questionKey": "operations_process_documented",
+      "sectionKey": "operations",
+      "answerType": "select",
+      "value": "partly_documented"
+    },
+    {
+      "questionKey": "operations_biggest_delay",
+      "sectionKey": "operations",
+      "answerType": "textarea",
+      "value": "Stock counts take too long each week."
+    }
+  ]
+}
