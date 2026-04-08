@@ -25,6 +25,11 @@ export const dashboardNavigation = [
     description: "30, 60, and 90-day action planning",
   },
   {
+    href: "/reports",
+    label: "Reports",
+    description: "Structured report and export view",
+  },
+  {
     href: "/history",
     label: "History",
     description: "Prior assessments and generated outputs",

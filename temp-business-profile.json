@@ -1,0 +1,12 @@
+{
+  "businessName": "BiasharaMind Demo Shop",
+  "industry": "retail",
+  "country": "KE",
+  "sizeBand": "small",
+  "yearsOperating": 3,
+  "revenueBand": "10k_to_50k_usd",
+  "teamSize": 6,
+  "mainGoal": "Improve operational consistency and grow repeat sales",
+  "budgetBand": "500_to_2000_usd_per_month",
+  "currentTools": ["WhatsApp", "Excel", "M-Pesa"]
+}
