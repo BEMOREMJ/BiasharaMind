@@ -4,7 +4,7 @@ export default function DashboardHomePage() {
   return (
     <DashboardPage
       title="Dashboard"
-      description="This placeholder is the future overview for onboarding progress, recent assessments, and priority snapshots."
+      description="See your progress at a glance, revisit recent activity, and stay focused on the priorities that matter most to your business."
     />
   );
 }

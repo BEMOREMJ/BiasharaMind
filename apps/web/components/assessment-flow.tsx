@@ -156,9 +156,11 @@ export function AssessmentFlow() {
         if (assessment) {
           setSavedAssessment(assessment);
           setAnswerMap(toAnswerMap(assessment));
-          setStatusMessage("Loaded the current assessment draft.");
+          setStatusMessage("Your current assessment has been loaded.");
         } else {
-          setStatusMessage("No saved assessment draft yet. Start answering section by section.");
+          setStatusMessage(
+            "No saved assessment yet. Start with the first section and save your progress as you go.",
+          );
         }
       } catch (error) {
         if (!active) {
@@ -187,7 +189,7 @@ export function AssessmentFlow() {
     }));
   }
 
-  async function handleSaveDraft() {
+  async function handleSaveProgress() {
     setIsSaving(true);
     setErrorMessage(null);
     setStatusMessage(null);
@@ -198,10 +200,10 @@ export function AssessmentFlow() {
         : await createAssessment(buildCreatePayload(answerMap));
 
       setSavedAssessment(assessment);
-      setStatusMessage("Assessment draft saved.");
+      setStatusMessage("Assessment progress saved.");
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to save the assessment draft.",
+        error instanceof Error ? error.message : "Unable to save assessment progress.",
       );
     } finally {
       setIsSaving(false);
@@ -218,7 +220,7 @@ export function AssessmentFlow() {
     }
 
     if (!savedAssessment) {
-      setErrorMessage("Save the draft at least once before submitting.");
+      setErrorMessage("Save your progress at least once before submitting.");
       setStatusMessage(null);
       return;
     }
@@ -254,20 +256,20 @@ export function AssessmentFlow() {
 
   return (
     <div className="dashboard-stack">
-      <DashboardCard tone="hero" title="Assessment">
+      <DashboardCard tone="hero" title="Business assessment">
         <div className="dashboard-stack">
           <Badge tone={isSubmitted ? "success" : "default"}>
-            {isSubmitted ? "Submitted assessment" : "Assessment draft"}
+            {isSubmitted ? "Assessment submitted" : "Assessment in progress"}
           </Badge>
           <SectionHeader
             title="Business assessment"
-            eyebrow="Guided workflow"
-            description="Move section by section through a lightweight operational assessment. Save draft progress at any time, then submit once all required answers are complete."
+            eyebrow="Guided review"
+            description="Answer a set of practical questions about how your business operates today. BiasharaMind uses your responses to identify strengths, risks, and the areas that need the most attention."
           />
           <div className="stats-row">
             <div className="stat-chip">
               <strong>{completedSections}</strong>
-              <span>Sections complete</span>
+              <span>Sections completed</span>
             </div>
             <div className="stat-chip">
               <strong>{answeredCount}</strong>
@@ -303,7 +305,7 @@ export function AssessmentFlow() {
                   <span className="assessment-progress__step">{index + 1}</span>
                   <span>
                     <strong>{section.title}</strong>
-                    <small>{complete ? "Complete" : "In progress"}</small>
+                    <small>{complete ? "Completed" : "In progress"}</small>
                   </span>
                 </button>
               );
@@ -394,10 +396,10 @@ export function AssessmentFlow() {
                   </SecondaryButton>
                   <PrimaryButton
                     disabled={isLoading || isSaving || isSubmitting || isSubmitted}
-                    onClick={handleSaveDraft}
+                    onClick={handleSaveProgress}
                     type="button"
                   >
-                    {isSaving ? "Saving..." : "Save draft"}
+                    {isSaving ? "Saving..." : "Save progress"}
                   </PrimaryButton>
                   <PrimaryButton disabled={isLoading || isSaving || isSubmitting || isSubmitted}>
                     {isSubmitting ? "Submitting..." : "Submit assessment"}
@@ -432,17 +434,17 @@ export function AssessmentFlow() {
               <dd>{savedAssessment.answers.length}</dd>
             </div>
             <div>
-              <dt>Started at</dt>
+              <dt>Started on</dt>
               <dd>{savedAssessment.startedAt}</dd>
             </div>
             <div>
-              <dt>Submitted at</dt>
+              <dt>Submitted on</dt>
               <dd>{savedAssessment.submittedAt ?? "Not submitted yet"}</dd>
             </div>
           </dl>
         ) : (
           <p className="muted-copy">
-            No assessment is saved yet. Answer questions and save the draft to create one.
+            You have not saved an assessment yet. Complete a section and save your progress to begin building your business review.
           </p>
         )}
       </DashboardCard>

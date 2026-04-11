@@ -12,20 +12,20 @@ export function DashboardPage({ description, title }: DashboardPageProps) {
     <>
       <DashboardCard tone="hero" title={title}>
         <div className="dashboard-stack">
-          <Badge>Placeholder page</Badge>
+          <Badge>Business workspace</Badge>
           <SectionHeader description={description} eyebrow="Workspace" title={title} />
         </div>
       </DashboardCard>
       <div className="dashboard-grid">
         <DashboardCard
-          description="This area will receive real product modules when the corresponding feature work begins."
-          title="Current scope"
+          description="Review the latest information available in this workspace and keep your business priorities in view."
+          title="Current focus"
         />
-        <DashboardCard title="Next implementation">
+        <DashboardCard title="What you can expect here">
           <ul className="list-copy">
-            <li>Replace placeholder text with feature-specific UI.</li>
-            <li>Connect the page to shared contracts and API data.</li>
-            <li>Keep the branded surface system consistent across flows.</li>
+            <li>See recent business activity and saved outputs in one place.</li>
+            <li>Track how your priorities change over time.</li>
+            <li>Stay aligned on the next actions that support steady growth.</li>
           </ul>
         </DashboardCard>
       </div>

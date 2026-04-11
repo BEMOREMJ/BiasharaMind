@@ -51,7 +51,7 @@ export async function getAnalysis(): Promise<AnalysisSummary | null> {
 
   if (!response.ok) {
     throw new AnalysisApiError(
-      readErrorMessage(payload, "Failed to load the analysis summary."),
+      readErrorMessage(payload, "Failed to load insights."),
       response.status,
     );
   }
@@ -71,7 +71,7 @@ export async function runAnalysis(): Promise<AnalysisSummary> {
 
   if (!response.ok) {
     throw new AnalysisApiError(
-      readErrorMessage(payload, "Failed to run analysis."),
+      readErrorMessage(payload, "Failed to generate insights."),
       response.status,
     );
   }

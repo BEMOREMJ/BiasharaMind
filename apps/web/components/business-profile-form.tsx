@@ -142,7 +142,7 @@ export function BusinessProfileForm() {
           setStatusMessage("Loaded the current business profile.");
         } else {
           setSavedProfile(null);
-          setStatusMessage("No saved business profile yet. Fill out the form to create one.");
+          setStatusMessage("No saved business profile yet. Complete the form to get started.");
         }
       } catch (error) {
         if (!active) {
@@ -212,18 +212,18 @@ export function BusinessProfileForm() {
 
   return (
     <div className="dashboard-stack">
-      <DashboardCard tone="hero" title="Business Profile">
+      <DashboardCard tone="hero" title="Business profile">
         <div className="dashboard-stack">
           <Badge tone={isProfileSaved ? "success" : "default"}>
-            {isProfileSaved ? "Saved profile" : "Create profile"}
+            {isProfileSaved ? "Profile saved" : "Set up profile"}
           </Badge>
           <SectionHeader
             title="Business profile"
-            eyebrow="Onboarding"
-            description="Capture the core business context that BiasharaMind will use to tailor assessment scoring, recommendations, and future roadmap outputs."
+            eyebrow="Getting started"
+            description="Tell us about your business so BiasharaMind can tailor your assessment, insights, and action plan to your real operating context."
           />
           <p className="muted-copy">
-            This V1 flow stores data in a temporary in-memory backend service for now.
+            This is an early version of BiasharaMind, and profile data is currently stored in a temporary workspace environment.
           </p>
         </div>
       </DashboardCard>

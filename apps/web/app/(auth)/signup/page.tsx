@@ -4,7 +4,7 @@ export default function SignupPage() {
   return (
     <AuthCard
       title="Create account"
-      description="This placeholder will become the account creation flow for onboarding new businesses into BiasharaMind."
+      description="Set up your workspace and start building a clearer picture of your business, its needs, and its next opportunities."
     />
   );
 }

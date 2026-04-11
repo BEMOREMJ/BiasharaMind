@@ -15,9 +15,9 @@ export function DashboardShell({ children }: DashboardShellProps) {
       <aside className="dashboard-sidebar">
         <BrandLogo mode="lockup" />
         <div className="dashboard-stack">
-          <Badge tone="success">V1 workspace</Badge>
+          <Badge tone="success">Business workspace</Badge>
           <p className="muted-copy">
-            Placeholder surfaces for onboarding, assessment, results, roadmap, and history.
+            Manage your business profile, complete assessments, review insights, and build practical action plans in one place.
           </p>
         </div>
         <nav aria-label="Dashboard" className="dashboard-nav">

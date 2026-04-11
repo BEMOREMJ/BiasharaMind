@@ -21,7 +21,7 @@ export function AuthCard({ description, title }: AuthCardProps) {
       <div className="auth-card__form" aria-hidden="true">
         <InputField
           autoComplete="email"
-          hint="Placeholder input only. Auth wiring will be added later."
+          hint="Authentication is not available in this preview yet."
           id={`${fieldPrefix}-email`}
           label="Email"
           placeholder="owner@business.com"

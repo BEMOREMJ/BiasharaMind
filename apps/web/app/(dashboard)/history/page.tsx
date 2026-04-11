@@ -4,7 +4,7 @@ export default function HistoryPage() {
   return (
     <DashboardPage
       title="History"
-      description="This placeholder will show prior assessments, generated reports, and historical roadmap outputs for the business."
+      description="Review previous assessments, reports, and roadmap outputs to track how your business priorities have evolved over time."
     />
   );
 }

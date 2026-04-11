@@ -11,11 +11,11 @@ export default function LandingPage() {
       <div className="marketing-stack">
         <section className="hero">
           <div className="hero__content">
-            <Badge>V1 foundation</Badge>
+            <Badge>Built for growing SMEs</Badge>
             <SectionHeader
-              description="This is still placeholder product content, but it now sits on the first branded UI layer for BiasharaMind."
-              eyebrow="Intelligent business guidance"
-              title="BiasharaMind helps SMEs identify gaps and plan the next 90 days."
+              description="Get clear business insights, focused priorities, and a practical action plan tailored to how your business operates today."
+              eyebrow="Practical business guidance"
+              title="BiasharaMind helps businesses see what matters, fix what slows growth, and plan the next 90 days."
             />
             <div className="hero__actions">
               <PrimaryButton href="/signup">Create account</PrimaryButton>
@@ -25,16 +25,16 @@ export default function LandingPage() {
         </section>
         <div className="info-grid">
           <DashboardCard
-            description="Structured onboarding and assessment flows will guide businesses through their current operating reality."
-            title="Clear input capture"
+            description="Capture the key details about your business so BiasharaMind can understand your current operations, challenges, and growth context."
+            title="Clear business inputs"
           />
           <DashboardCard
-            description="Results, priorities, and roadmap outputs will align to a calm, actionable product surface."
-            title="Trustworthy outputs"
+            description="Turn assessment responses into clear strengths, risks, and priority areas your business can act on with confidence."
+            title="Actionable insights"
           />
           <DashboardCard
-            description="The UI tokens and primitives introduced here are intended to scale into the dashboard experience."
-            title="Reusable foundation"
+            description="From assessment to roadmap, BiasharaMind is designed to help SMEs make smarter decisions and move forward step by step."
+            title="Built for steady growth"
           />
         </div>
       </div>

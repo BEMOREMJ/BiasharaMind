@@ -28,9 +28,9 @@ function RoadmapPhase({ actions, description, title }: RoadmapPhaseProps) {
                 <p className="muted-copy">{action.whyItMatters}</p>
               </div>
               <div className="button-row">
-                <Badge tone="default">Effort: {action.effort}</Badge>
-                <Badge tone="warning">Cost: {action.costBand}</Badge>
-                <Badge tone="success">Impact: {action.expectedImpact}</Badge>
+                <Badge tone="default">{`Effort: ${action.effort}`}</Badge>
+                <Badge tone="warning">{`Cost: ${action.costBand}`}</Badge>
+                <Badge tone="success">{`Impact: ${action.expectedImpact}`}</Badge>
               </div>
             </article>
           ))}
@@ -64,7 +64,7 @@ export function RoadmapView() {
           setRoadmap(savedRoadmap);
           setStatusMessage("Loaded the current roadmap.");
         } else {
-          setStatusMessage("No roadmap exists yet. Generate one from the current analysis summary.");
+          setStatusMessage("No roadmap is available yet. Generate one from your business insights.");
         }
       } catch (error) {
         if (!active) {
@@ -104,15 +104,15 @@ export function RoadmapView() {
 
   return (
     <div className="dashboard-stack">
-      <DashboardCard tone="hero" title="Roadmap">
+      <DashboardCard tone="hero" title="30 / 60 / 90-day roadmap">
         <div className="dashboard-stack">
           <Badge tone={roadmap ? "success" : "default"}>
             {roadmap ? "Roadmap ready" : "Generate roadmap"}
           </Badge>
           <SectionHeader
-            title="30/60/90-day roadmap"
-            eyebrow="Deterministic planning"
-            description="Generate a rule-based roadmap from the saved analysis summary. The current V1 version translates top priorities and risks into phased execution actions."
+            title="30 / 60 / 90-day roadmap"
+            eyebrow="Action plan"
+            description="Turn your top priorities into a focused execution plan with practical actions your business can work on over the next 30, 60, and 90 days."
           />
           <div className="button-row">
             <PrimaryButton
@@ -120,7 +120,7 @@ export function RoadmapView() {
               onClick={handleGenerateRoadmap}
               type="button"
             >
-              {isGenerating ? "Generating roadmap..." : roadmap ? "Re-generate roadmap" : "Generate roadmap"}
+              {isGenerating ? "Generating roadmap..." : roadmap ? "Refresh roadmap" : "Generate roadmap"}
             </PrimaryButton>
           </div>
           {(statusMessage || errorMessage) && (

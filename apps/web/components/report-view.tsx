@@ -46,7 +46,7 @@ export function ReportView() {
           setReport(savedReport);
           setStatusMessage("Loaded the current report.");
         } else {
-          setStatusMessage("No report exists yet. Generate one from the saved business profile, analysis, and roadmap.");
+          setStatusMessage("No report is available yet. Generate one from your saved business profile, insights, and roadmap.");
         }
       } catch (error) {
         if (!active) {
@@ -86,15 +86,15 @@ export function ReportView() {
 
   return (
     <div className="dashboard-stack">
-      <DashboardCard tone="hero" title="Report">
+      <DashboardCard tone="hero" title="Business report">
         <div className="dashboard-stack">
           <Badge tone={report ? "success" : "default"}>
             {report ? "Report ready" : "Generate report"}
           </Badge>
           <SectionHeader
-            title="Structured report"
-            eyebrow="Deterministic export"
-            description="Build a structured report from the current saved business profile, analysis summary, and roadmap. Export is provided as a lightweight JSON download for V1."
+            title="Business report"
+            eyebrow="Structured summary"
+            description="Create a clear report that brings together your business profile, assessment insights, and roadmap in one structured view."
           />
           <div className="button-row">
             <PrimaryButton
@@ -102,7 +102,7 @@ export function ReportView() {
               onClick={handleGenerateReport}
               type="button"
             >
-              {isGenerating ? "Generating report..." : report ? "Re-generate report" : "Generate report"}
+              {isGenerating ? "Generating report..." : report ? "Refresh report" : "Generate report"}
             </PrimaryButton>
             <SecondaryButton
               disabled={!report}
@@ -113,7 +113,7 @@ export function ReportView() {
               }}
               type="button"
             >
-              Download JSON
+              Download report (JSON)
             </SecondaryButton>
           </div>
           {(statusMessage || errorMessage) && (
@@ -179,7 +179,7 @@ export function ReportView() {
                       <strong>{category.label}</strong>
                       <p className="muted-copy">{category.sectionKey}</p>
                     </div>
-                    <Badge tone="default">{Math.round(category.score)}</Badge>
+                    <Badge tone="default">{`${Math.round(category.score)}`}</Badge>
                   </div>
                 ))}
               </div>
@@ -212,9 +212,9 @@ export function ReportView() {
                     <p className="card-description">{priority.why}</p>
                   </div>
                   <div className="button-row">
-                    <Badge tone="default">Effort: {priority.effort}</Badge>
-                    <Badge tone="warning">Cost: {priority.costBand}</Badge>
-                    <Badge tone="success">Impact: {priority.expectedImpact}</Badge>
+                    <Badge tone="default">{`Effort: ${priority.effort}`}</Badge>
+                    <Badge tone="warning">{`Cost: ${priority.costBand}`}</Badge>
+                    <Badge tone="success">{`Impact: ${priority.expectedImpact}`}</Badge>
                   </div>
                 </article>
               ))}

@@ -2,36 +2,36 @@ export const dashboardNavigation = [
   {
     href: "/dashboard",
     label: "Home",
-    description: "Overview and progress snapshot",
+    description: "Your business snapshot and recent progress",
   },
   {
     href: "/business",
     label: "Business Profile",
-    description: "Core business context and onboarding inputs",
+    description: "Key business details that shape your recommendations",
   },
   {
     href: "/assessment",
     label: "Assessment",
-    description: "Guided questions across operating areas",
+    description: "Guided questions across core areas of your business",
   },
   {
     href: "/results",
     label: "Results",
-    description: "Scores, insights, strengths, and risks",
+    description: "Insights, scores, strengths, and priority risks",
   },
   {
     href: "/roadmap",
     label: "Roadmap",
-    description: "30, 60, and 90-day action planning",
+    description: "A focused 30, 60, and 90-day action plan",
   },
   {
     href: "/reports",
     label: "Reports",
-    description: "Structured report and export view",
+    description: "A structured summary of your business insights and plan",
   },
   {
     href: "/history",
     label: "History",
-    description: "Prior assessments and generated outputs",
+    description: "Past assessments, reports, and roadmap versions",
   },
 ] as const;

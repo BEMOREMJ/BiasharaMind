@@ -13,7 +13,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "BiasharaMind",
-  description: "AI business consultant platform for SMEs.",
+  description: "AI-powered business guidance for growing SMEs.",
 };
 
 type RootLayoutProps = {
