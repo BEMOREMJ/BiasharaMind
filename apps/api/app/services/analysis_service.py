@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.repositories.analysis_repository import analysis_repository
 from app.schemas.analysis import (
@@ -215,7 +216,7 @@ class AnalysisService:
         ]
 
         summary = AnalysisSummaryRead(
-            id="analysis_summary_v1",
+            id=f"analysis_{uuid4().hex}",
             assessment_id=assessment.id,
             overall_score=overall_score,
             category_scores=category_scores,

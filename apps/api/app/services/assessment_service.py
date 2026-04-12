@@ -1,6 +1,8 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.repositories.assessment_repository import assessment_repository
+from app.services.business_profile_service import business_profile_service
 from app.schemas.assessment import (
     AssessmentCreate,
     AssessmentRead,
@@ -17,9 +19,10 @@ class AssessmentService:
 
     def create_assessment(self, payload: AssessmentCreate) -> AssessmentRead:
         started_at = datetime.now(UTC).isoformat()
+        business_profile = business_profile_service.get_profile()
         assessment = AssessmentRead(
-            id="assessment_v1",
-            business_id="business_profile_v1",
+            id=f"assessment_{uuid4().hex}",
+            business_id=business_profile.id if business_profile is not None else "business_profile_v1",
             status="in_progress",
             version=payload.version,
             started_at=started_at,

@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.repositories.roadmap_repository import roadmap_repository
 from app.schemas.analysis import PriorityRecommendation
@@ -88,7 +89,7 @@ class RoadmapService:
             days61to90.append(build_risk_action(risks[2], "Prevent recurring bottlenecks"))
 
         roadmap = RoadmapRead(
-            id="roadmap_v1",
+            id=f"roadmap_{uuid4().hex}",
             analysis_id=analysis.id,
             days0to30=days0to30,
             days31to60=days31to60,

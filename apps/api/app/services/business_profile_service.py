@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.repositories.business_profile_repository import business_profile_repository
 from app.schemas.business_profile import (
@@ -17,7 +18,7 @@ class BusinessProfileService:
     def create_profile(self, payload: BusinessProfileCreate) -> BusinessProfileRead:
         timestamp = datetime.now(UTC).isoformat()
         profile = BusinessProfileRead(
-            id="business_profile_v1",
+            id=f"business_profile_{uuid4().hex}",
             user_id="demo_user_v1",
             created_at=timestamp,
             updated_at=timestamp,

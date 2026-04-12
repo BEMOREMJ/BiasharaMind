@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from uuid import uuid4
 
 from app.repositories.report_repository import report_repository
 from app.schemas.report import ReportBusinessSummary, ReportRead, ReportRoadmapPhase
@@ -22,10 +23,10 @@ class ReportService:
             return None
 
         report = ReportRead(
-            id="report_v1",
+            id=f"report_{uuid4().hex}",
             analysis_id=analysis.id,
             format="json",
-            storage_path=f"in_memory/{analysis.id}_report.json",
+            storage_path=f"reports/{analysis.id}_report.json",
             created_at=datetime.now(UTC).isoformat(),
             business_summary=ReportBusinessSummary(
                 business_name=business_profile.business_name,

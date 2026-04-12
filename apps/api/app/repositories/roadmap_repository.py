@@ -1,20 +1,55 @@
-from app.schemas.roadmap import RoadmapRead
+from sqlalchemy import select, update
+
+from app.db.session import session_scope
+from app.models.roadmap import RoadmapRecord
+from app.schemas.roadmap import RoadmapAction, RoadmapRead
 
 
-class InMemoryRoadmapRepository:
-    """Temporary in-memory repository for the single generated roadmap."""
+def _to_schema(record: RoadmapRecord) -> RoadmapRead:
+    return RoadmapRead(
+        id=record.id,
+        analysis_id=record.analysis_id,
+        days0to30=[RoadmapAction.model_validate(item) for item in record.days_0_to_30 or []],
+        days31to60=[RoadmapAction.model_validate(item) for item in record.days_31_to_60 or []],
+        days61to90=[RoadmapAction.model_validate(item) for item in record.days_61_to_90 or []],
+        created_at=record.created_at.isoformat(),
+    )
 
-    def __init__(self) -> None:
-        self._roadmap: RoadmapRead | None = None
+
+class RoadmapRepository:
+    """PostgreSQL-backed repository for generated roadmaps."""
 
     def get(self) -> RoadmapRead | None:
-        if self._roadmap is None:
-            return None
-        return self._roadmap.model_copy(deep=True)
+        with session_scope() as session:
+            record = session.scalar(
+                select(RoadmapRecord)
+                .where(RoadmapRecord.is_active.is_(True))
+                .order_by(RoadmapRecord.created_at.desc())
+                .limit(1)
+            )
+            if record is None:
+                return None
+            return _to_schema(record)
 
     def save(self, roadmap: RoadmapRead) -> RoadmapRead:
-        self._roadmap = roadmap.model_copy(deep=True)
-        return self.get()
+        with session_scope() as session:
+            session.execute(
+                update(RoadmapRecord)
+                .where(RoadmapRecord.is_active.is_(True))
+                .values(is_active=False)
+            )
+            record = RoadmapRecord(
+                id=roadmap.id,
+                user_id=None,
+                analysis_id=roadmap.analysis_id,
+                days_0_to_30=[item.model_dump(mode="json") for item in roadmap.days0to30],
+                days_31_to_60=[item.model_dump(mode="json") for item in roadmap.days31to60],
+                days_61_to_90=[item.model_dump(mode="json") for item in roadmap.days61to90],
+            )
+            session.add(record)
+            session.flush()
+            session.refresh(record)
+            return _to_schema(record)
 
 
-roadmap_repository = InMemoryRoadmapRepository()
+roadmap_repository = RoadmapRepository()
