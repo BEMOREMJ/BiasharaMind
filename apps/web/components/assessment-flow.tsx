@@ -401,7 +401,10 @@ export function AssessmentFlow() {
                   >
                     {isSaving ? "Saving..." : "Save progress"}
                   </PrimaryButton>
-                  <PrimaryButton disabled={isLoading || isSaving || isSubmitting || isSubmitted}>
+                  <PrimaryButton
+                    disabled={isLoading || isSaving || isSubmitting || isSubmitted}
+                    type="submit"
+                  >
                     {isSubmitting ? "Submitting..." : "Submit assessment"}
                   </PrimaryButton>
                 </div>

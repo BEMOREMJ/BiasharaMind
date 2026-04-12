@@ -5,6 +5,7 @@ export default function SignupPage() {
     <AuthCard
       title="Create account"
       description="Set up your workspace and start building a clearer picture of your business, its needs, and its next opportunities."
+      mode="signup"
     />
   );
 }

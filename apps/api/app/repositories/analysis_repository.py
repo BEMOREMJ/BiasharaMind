@@ -27,10 +27,11 @@ def _to_schema(record: AnalysisRecord) -> AnalysisSummaryRead:
 class AnalysisRepository:
     """PostgreSQL-backed repository for saved analysis summaries."""
 
-    def get(self) -> AnalysisSummaryRead | None:
+    def get(self, user_id: str) -> AnalysisSummaryRead | None:
         with session_scope() as session:
             record = session.scalar(
                 select(AnalysisRecord)
+                .where(AnalysisRecord.user_id == user_id)
                 .where(AnalysisRecord.is_active.is_(True))
                 .order_by(AnalysisRecord.created_at.desc())
                 .limit(1)
@@ -39,16 +40,17 @@ class AnalysisRepository:
                 return None
             return _to_schema(record)
 
-    def save(self, analysis: AnalysisSummaryRead) -> AnalysisSummaryRead:
+    def save(self, analysis: AnalysisSummaryRead, user_id: str) -> AnalysisSummaryRead:
         with session_scope() as session:
             session.execute(
                 update(AnalysisRecord)
+                .where(AnalysisRecord.user_id == user_id)
                 .where(AnalysisRecord.is_active.is_(True))
                 .values(is_active=False)
             )
             record = AnalysisRecord(
                 id=analysis.id,
-                user_id=None,
+                user_id=user_id,
                 assessment_id=analysis.assessment_id,
                 overall_score=analysis.overall_score,
                 category_scores=[item.model_dump(mode="json") for item in analysis.category_scores],

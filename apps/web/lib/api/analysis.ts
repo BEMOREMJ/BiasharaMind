@@ -1,6 +1,6 @@
 import { AnalysisSummarySchema, type AnalysisSummary } from "@biasharamind/shared";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiFetch, parseJsonResponse, readErrorMessage } from "@/lib/api/request";
 
 class AnalysisApiError extends Error {
   status: number;
@@ -12,42 +12,20 @@ class AnalysisApiError extends Error {
   }
 }
 
-async function parseJsonResponse(response: Response) {
-  const text = await response.text();
-  if (!text) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new AnalysisApiError("Received an invalid JSON response from the API.", response.status);
-  }
-}
-
-function readErrorMessage(payload: unknown, fallback: string): string {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "detail" in payload &&
-    typeof (payload as { detail: unknown }).detail === "string"
-  ) {
-    return (payload as { detail: string }).detail;
-  }
-
-  return fallback;
-}
-
 export async function getAnalysis(): Promise<AnalysisSummary | null> {
-  const response = await fetch(`${API_BASE_URL}/analysis`, {
-    cache: "no-store",
-  });
+  const response = await apiFetch("/analysis");
 
   if (response.status === 404) {
     return null;
   }
 
-  const payload = await parseJsonResponse(response);
+  let payload: unknown;
+
+  try {
+    payload = await parseJsonResponse(response);
+  } catch {
+    throw new AnalysisApiError("Received an invalid JSON response from the API.", response.status);
+  }
 
   if (!response.ok) {
     throw new AnalysisApiError(
@@ -60,14 +38,20 @@ export async function getAnalysis(): Promise<AnalysisSummary | null> {
 }
 
 export async function runAnalysis(): Promise<AnalysisSummary> {
-  const response = await fetch(`${API_BASE_URL}/analysis/run`, {
+  const response = await apiFetch("/analysis/run", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
   });
 
-  const payload = await parseJsonResponse(response);
+  let payload: unknown;
+
+  try {
+    payload = await parseJsonResponse(response);
+  } catch {
+    throw new AnalysisApiError("Received an invalid JSON response from the API.", response.status);
+  }
 
   if (!response.ok) {
     throw new AnalysisApiError(

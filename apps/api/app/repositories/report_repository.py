@@ -31,10 +31,11 @@ def _to_schema(record: ReportRecord) -> ReportRead:
 class ReportRepository:
     """PostgreSQL-backed repository for generated reports."""
 
-    def get(self) -> ReportRead | None:
+    def get(self, user_id: str) -> ReportRead | None:
         with session_scope() as session:
             record = session.scalar(
                 select(ReportRecord)
+                .where(ReportRecord.user_id == user_id)
                 .where(ReportRecord.is_active.is_(True))
                 .order_by(ReportRecord.created_at.desc())
                 .limit(1)
@@ -43,16 +44,17 @@ class ReportRepository:
                 return None
             return _to_schema(record)
 
-    def save(self, report: ReportRead) -> ReportRead:
+    def save(self, report: ReportRead, user_id: str) -> ReportRead:
         with session_scope() as session:
             session.execute(
                 update(ReportRecord)
+                .where(ReportRecord.user_id == user_id)
                 .where(ReportRecord.is_active.is_(True))
                 .values(is_active=False)
             )
             record = ReportRecord(
                 id=report.id,
-                user_id=None,
+                user_id=user_id,
                 analysis_id=report.analysis_id,
                 format=report.format,
                 storage_path=report.storage_path,

@@ -5,6 +5,7 @@ export default function LoginPage() {
     <AuthCard
       title="Log in"
       description="Access your business workspace to continue your assessment, review insights, and track your next priorities."
+      mode="login"
     />
   );
 }

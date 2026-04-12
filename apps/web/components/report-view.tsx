@@ -84,6 +84,16 @@ export function ReportView() {
     }
   }
 
+  function handleDownloadReport() {
+    if (!report) {
+      return;
+    }
+
+    downloadReport(report);
+    setErrorMessage(null);
+    setStatusMessage(`Downloaded ${report.exportFileName}.`);
+  }
+
   return (
     <div className="dashboard-stack">
       <DashboardCard tone="hero" title="Business report">
@@ -106,11 +116,7 @@ export function ReportView() {
             </PrimaryButton>
             <SecondaryButton
               disabled={!report}
-              onClick={() => {
-                if (report) {
-                  downloadReport(report);
-                }
-              }}
+              onClick={handleDownloadReport}
               type="button"
             >
               Download report (JSON)

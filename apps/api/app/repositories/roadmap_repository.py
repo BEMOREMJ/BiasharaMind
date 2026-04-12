@@ -19,10 +19,11 @@ def _to_schema(record: RoadmapRecord) -> RoadmapRead:
 class RoadmapRepository:
     """PostgreSQL-backed repository for generated roadmaps."""
 
-    def get(self) -> RoadmapRead | None:
+    def get(self, user_id: str) -> RoadmapRead | None:
         with session_scope() as session:
             record = session.scalar(
                 select(RoadmapRecord)
+                .where(RoadmapRecord.user_id == user_id)
                 .where(RoadmapRecord.is_active.is_(True))
                 .order_by(RoadmapRecord.created_at.desc())
                 .limit(1)
@@ -31,16 +32,17 @@ class RoadmapRepository:
                 return None
             return _to_schema(record)
 
-    def save(self, roadmap: RoadmapRead) -> RoadmapRead:
+    def save(self, roadmap: RoadmapRead, user_id: str) -> RoadmapRead:
         with session_scope() as session:
             session.execute(
                 update(RoadmapRecord)
+                .where(RoadmapRecord.user_id == user_id)
                 .where(RoadmapRecord.is_active.is_(True))
                 .values(is_active=False)
             )
             record = RoadmapRecord(
                 id=roadmap.id,
-                user_id=None,
+                user_id=user_id,
                 analysis_id=roadmap.analysis_id,
                 days_0_to_30=[item.model_dump(mode="json") for item in roadmap.days0to30],
                 days_31_to_60=[item.model_dump(mode="json") for item in roadmap.days31to60],

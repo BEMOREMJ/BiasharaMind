@@ -12,22 +12,22 @@ from app.schemas.business_profile import (
 class BusinessProfileService:
     """Application service for the temporary business profile feature slice."""
 
-    def get_profile(self) -> BusinessProfileRead | None:
-        return business_profile_repository.get()
+    def get_profile(self, user_id: str) -> BusinessProfileRead | None:
+        return business_profile_repository.get(user_id)
 
-    def create_profile(self, payload: BusinessProfileCreate) -> BusinessProfileRead:
+    def create_profile(self, payload: BusinessProfileCreate, user_id: str) -> BusinessProfileRead:
         timestamp = datetime.now(UTC).isoformat()
         profile = BusinessProfileRead(
             id=f"business_profile_{uuid4().hex}",
-            user_id="demo_user_v1",
+            user_id=user_id,
             created_at=timestamp,
             updated_at=timestamp,
             **payload.model_dump(),
         )
         return business_profile_repository.create(profile)
 
-    def update_profile(self, payload: BusinessProfileUpdate) -> BusinessProfileRead | None:
-        existing = business_profile_repository.get()
+    def update_profile(self, payload: BusinessProfileUpdate, user_id: str) -> BusinessProfileRead | None:
+        existing = business_profile_repository.get(user_id)
         if existing is None:
             return None
 
@@ -37,7 +37,7 @@ class BusinessProfileService:
                 "updated_at": datetime.now(UTC).isoformat(),
             }
         )
-        return business_profile_repository.update(updated)
+        return business_profile_repository.update(updated, user_id)
 
 
 business_profile_service = BusinessProfileService()

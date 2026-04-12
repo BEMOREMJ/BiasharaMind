@@ -11,13 +11,13 @@ from app.services.roadmap_service import roadmap_service
 class ReportService:
     """Deterministic V1 report assembly from saved feature outputs."""
 
-    def get_report(self) -> ReportRead | None:
-        return report_repository.get()
+    def get_report(self, user_id: str) -> ReportRead | None:
+        return report_repository.get(user_id)
 
-    def generate_report(self) -> ReportRead | None:
-        business_profile = business_profile_service.get_profile()
-        analysis = analysis_service.get_analysis()
-        roadmap = roadmap_service.get_roadmap()
+    def generate_report(self, user_id: str) -> ReportRead | None:
+        business_profile = business_profile_service.get_profile(user_id)
+        analysis = analysis_service.get_analysis(user_id)
+        roadmap = roadmap_service.get_roadmap(user_id)
 
         if business_profile is None or analysis is None or roadmap is None:
             return None
@@ -49,7 +49,7 @@ class ReportService:
             export_file_name=f"biasharamind-report-{analysis.id}.json",
         )
 
-        return report_repository.save(report)
+        return report_repository.save(report, user_id)
 
 
 report_service = ReportService()

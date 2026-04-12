@@ -14,12 +14,12 @@ from app.schemas.assessment import (
 class AssessmentService:
     """Application service for the temporary assessment flow."""
 
-    def get_assessment(self) -> AssessmentRead | None:
-        return assessment_repository.get()
+    def get_assessment(self, user_id: str) -> AssessmentRead | None:
+        return assessment_repository.get(user_id)
 
-    def create_assessment(self, payload: AssessmentCreate) -> AssessmentRead:
+    def create_assessment(self, payload: AssessmentCreate, user_id: str) -> AssessmentRead:
         started_at = datetime.now(UTC).isoformat()
-        business_profile = business_profile_service.get_profile()
+        business_profile = business_profile_service.get_profile(user_id)
         assessment = AssessmentRead(
             id=f"assessment_{uuid4().hex}",
             business_id=business_profile.id if business_profile is not None else "business_profile_v1",
@@ -30,10 +30,10 @@ class AssessmentService:
             sections=payload.sections,
             answers=payload.answers,
         )
-        return assessment_repository.create(assessment)
+        return assessment_repository.create(assessment, user_id)
 
-    def update_assessment(self, payload: AssessmentUpdate) -> AssessmentRead | None:
-        existing = assessment_repository.get()
+    def update_assessment(self, payload: AssessmentUpdate, user_id: str) -> AssessmentRead | None:
+        existing = assessment_repository.get(user_id)
         if existing is None:
             return None
 
@@ -43,10 +43,10 @@ class AssessmentService:
                 "status": payload.status or "in_progress",
             }
         )
-        return assessment_repository.update(updated)
+        return assessment_repository.update(updated, user_id)
 
-    def submit_assessment(self, payload: AssessmentSubmit) -> AssessmentRead | None:
-        existing = assessment_repository.get()
+    def submit_assessment(self, payload: AssessmentSubmit, user_id: str) -> AssessmentRead | None:
+        existing = assessment_repository.get(user_id)
         if existing is None:
             return None
 
@@ -57,7 +57,7 @@ class AssessmentService:
                 "submitted_at": datetime.now(UTC).isoformat(),
             }
         )
-        return assessment_repository.update(submitted)
+        return assessment_repository.update(submitted, user_id)
 
 
 assessment_service = AssessmentService()

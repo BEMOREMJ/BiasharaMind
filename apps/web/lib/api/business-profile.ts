@@ -7,7 +7,7 @@ import {
   type BusinessProfileUpdate,
 } from "@biasharamind/shared";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+import { apiFetch, parseJsonResponse, readErrorMessage } from "@/lib/api/request";
 
 class BusinessProfileApiError extends Error {
   status: number;
@@ -19,46 +19,20 @@ class BusinessProfileApiError extends Error {
   }
 }
 
-async function parseJsonResponse(response: Response) {
-  const text = await response.text();
-
-  if (!text) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new BusinessProfileApiError(
-      "Received an invalid JSON response from the API.",
-      response.status,
-    );
-  }
-}
-
-function readErrorMessage(payload: unknown, fallback: string): string {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "detail" in payload &&
-    typeof (payload as { detail: unknown }).detail === "string"
-  ) {
-    return (payload as { detail: string }).detail;
-  }
-
-  return fallback;
-}
-
 export async function getBusinessProfile(): Promise<BusinessProfile | null> {
-  const response = await fetch(`${API_BASE_URL}/business-profile`, {
-    cache: "no-store",
-  });
+  const response = await apiFetch("/business-profile");
 
   if (response.status === 404) {
     return null;
   }
 
-  const payload = await parseJsonResponse(response);
+  let payload: unknown;
+
+  try {
+    payload = await parseJsonResponse(response);
+  } catch {
+    throw new BusinessProfileApiError("Received an invalid JSON response from the API.", response.status);
+  }
 
   if (!response.ok) {
     throw new BusinessProfileApiError(
@@ -74,7 +48,7 @@ export async function createBusinessProfile(
   input: BusinessProfileCreate,
 ): Promise<BusinessProfile> {
   const payload = BusinessProfileCreateSchema.parse(input);
-  const response = await fetch(`${API_BASE_URL}/business-profile`, {
+  const response = await apiFetch("/business-profile", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -82,7 +56,13 @@ export async function createBusinessProfile(
     body: JSON.stringify(payload),
   });
 
-  const responsePayload = await parseJsonResponse(response);
+  let responsePayload: unknown;
+
+  try {
+    responsePayload = await parseJsonResponse(response);
+  } catch {
+    throw new BusinessProfileApiError("Received an invalid JSON response from the API.", response.status);
+  }
 
   if (!response.ok) {
     throw new BusinessProfileApiError(
@@ -98,7 +78,7 @@ export async function updateBusinessProfile(
   input: BusinessProfileUpdate,
 ): Promise<BusinessProfile> {
   const payload = BusinessProfileUpdateSchema.parse(input);
-  const response = await fetch(`${API_BASE_URL}/business-profile`, {
+  const response = await apiFetch("/business-profile", {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -106,7 +86,13 @@ export async function updateBusinessProfile(
     body: JSON.stringify(payload),
   });
 
-  const responsePayload = await parseJsonResponse(response);
+  let responsePayload: unknown;
+
+  try {
+    responsePayload = await parseJsonResponse(response);
+  } catch {
+    throw new BusinessProfileApiError("Received an invalid JSON response from the API.", response.status);
+  }
 
   if (!response.ok) {
     throw new BusinessProfileApiError(

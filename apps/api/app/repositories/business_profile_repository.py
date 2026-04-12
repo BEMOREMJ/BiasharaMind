@@ -27,10 +27,11 @@ def _to_schema(record: BusinessProfileRecord) -> BusinessProfileRead:
 class BusinessProfileRepository:
     """PostgreSQL-backed repository for the single active business profile."""
 
-    def get(self) -> BusinessProfileRead | None:
+    def get(self, user_id: str) -> BusinessProfileRead | None:
         with session_scope() as session:
             record = session.scalar(
                 select(BusinessProfileRecord)
+                .where(BusinessProfileRecord.user_id == user_id)
                 .where(BusinessProfileRecord.is_active.is_(True))
                 .order_by(BusinessProfileRecord.updated_at.desc())
                 .limit(1)
@@ -60,13 +61,18 @@ class BusinessProfileRepository:
             session.refresh(record)
             return _to_schema(record)
 
-    def update(self, profile: BusinessProfileRead) -> BusinessProfileRead:
+    def update(self, profile: BusinessProfileRead, user_id: str) -> BusinessProfileRead:
         with session_scope() as session:
-            record = session.get(BusinessProfileRecord, profile.id)
+            record = session.scalar(
+                select(BusinessProfileRecord)
+                .where(BusinessProfileRecord.id == profile.id)
+                .where(BusinessProfileRecord.user_id == user_id)
+                .limit(1)
+            )
             if record is None:
                 raise ValueError(f"Business profile {profile.id} not found")
 
-            record.user_id = profile.user_id
+            record.user_id = user_id
             record.business_name = profile.business_name
             record.industry = profile.industry
             record.country = profile.country

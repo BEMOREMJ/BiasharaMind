@@ -42,11 +42,11 @@ def priority_for_index(priorities: list[PriorityRecommendation], index: int) -> 
 class RoadmapService:
     """Deterministic roadmap generation from the saved analysis summary."""
 
-    def get_roadmap(self) -> RoadmapRead | None:
-        return roadmap_repository.get()
+    def get_roadmap(self, user_id: str) -> RoadmapRead | None:
+        return roadmap_repository.get(user_id)
 
-    def generate_roadmap(self) -> RoadmapRead | None:
-        analysis = analysis_service.get_analysis()
+    def generate_roadmap(self, user_id: str) -> RoadmapRead | None:
+        analysis = analysis_service.get_analysis(user_id)
         if analysis is None:
             return None
 
@@ -97,7 +97,7 @@ class RoadmapService:
             created_at=datetime.now(UTC).isoformat(),
         )
 
-        return roadmap_repository.save(roadmap)
+        return roadmap_repository.save(roadmap, user_id)
 
 
 roadmap_service = RoadmapService()

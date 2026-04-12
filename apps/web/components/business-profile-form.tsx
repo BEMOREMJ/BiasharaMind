@@ -345,7 +345,7 @@ export function BusinessProfileForm() {
                 </div>
               )}
               <div className="form-grid__full button-row">
-                <PrimaryButton disabled={isLoading || isSaving}>
+                <PrimaryButton disabled={isLoading || isSaving} type="submit">
                   {isSaving
                     ? "Saving..."
                     : isProfileSaved

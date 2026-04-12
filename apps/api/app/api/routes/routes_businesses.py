@@ -1,12 +1,13 @@
 from fastapi import APIRouter
 
+from app.core.auth import CurrentUser
 
 router = APIRouter()
 
 
 @router.get("")
-def list_businesses() -> dict[str, object]:
+def list_businesses(current_user: CurrentUser) -> dict[str, object]:
     return {
         "items": [],
-        "message": "Businesses endpoint scaffolded. Listing logic will be added later.",
+        "message": "Businesses endpoint scaffolded for the authenticated workspace.",
     }

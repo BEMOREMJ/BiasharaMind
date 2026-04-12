@@ -1,4 +1,9 @@
-import type { ChangeEvent, InputHTMLAttributes, TextareaHTMLAttributes } from "react";
+import type {
+  ChangeEvent,
+  InputHTMLAttributes,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from "react";
 
 type InputOption = {
   label: string;
@@ -18,7 +23,8 @@ type BaseInputFieldProps = {
 };
 
 type InputControlProps = Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "value"> &
-  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value">;
+  Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "onChange" | "value"> &
+  Omit<SelectHTMLAttributes<HTMLSelectElement>, "onChange" | "value">;
 
 export function InputField({
   control = "input",
@@ -30,21 +36,26 @@ export function InputField({
   value,
   ...props
 }: BaseInputFieldProps & InputControlProps) {
-  const commonProps = {
-    className: "input-field__control",
-    id,
-    onChange,
-    value,
-  };
-
   return (
     <label className="input-field" htmlFor={id}>
       <span className="input-field__label">{label}</span>
       {control === "textarea" ? (
-        <textarea {...commonProps} {...props} />
+        <textarea
+          {...(props as TextareaHTMLAttributes<HTMLTextAreaElement>)}
+          className="input-field__control"
+          id={id}
+          onChange={onChange}
+          value={value}
+        />
       ) : null}
       {control === "select" ? (
-        <select {...commonProps} {...props}>
+        <select
+          {...(props as SelectHTMLAttributes<HTMLSelectElement>)}
+          className="input-field__control"
+          id={id}
+          onChange={onChange}
+          value={value}
+        >
           {options?.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -52,7 +63,15 @@ export function InputField({
           ))}
         </select>
       ) : null}
-      {control === "input" ? <input {...commonProps} {...props} /> : null}
+      {control === "input" ? (
+        <input
+          {...(props as InputHTMLAttributes<HTMLInputElement>)}
+          className="input-field__control"
+          id={id}
+          onChange={onChange}
+          value={value}
+        />
+      ) : null}
       {hint ? <span className="input-field__hint">{hint}</span> : null}
     </label>
   );

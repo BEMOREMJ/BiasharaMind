@@ -25,6 +25,17 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("DATABASE_URL", "API_DATABASE_URL"),
     )
     database_echo: bool = False
+    supabase_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SUPABASE_URL", "API_SUPABASE_URL"),
+    )
+    supabase_service_role_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "SUPABASE_SERVICE_ROLE_KEY",
+            "API_SUPABASE_SERVICE_ROLE_KEY",
+        ),
+    )
 
     model_config = SettingsConfigDict(
         env_prefix="API_",
@@ -55,6 +66,15 @@ class Settings(BaseSettings):
         if normalized.startswith("postgres://"):
             return normalized.replace("postgres://", "postgresql+psycopg://", 1)
         return normalized
+
+    @field_validator("supabase_url", "supabase_service_role_key", mode="before")
+    @classmethod
+    def normalize_optional_string(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+
+        normalized = value.strip()
+        return normalized or None
 
 
 @lru_cache(maxsize=1)

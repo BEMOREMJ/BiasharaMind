@@ -158,11 +158,11 @@ def score_answer(question_key: str, value: str | int | float) -> float:
 class AnalysisService:
     """Deterministic V1 scoring and analysis summary generation."""
 
-    def get_analysis(self) -> AnalysisSummaryRead | None:
-        return analysis_repository.get()
+    def get_analysis(self, user_id: str) -> AnalysisSummaryRead | None:
+        return analysis_repository.get(user_id)
 
-    def run_analysis(self) -> AnalysisSummaryRead | None:
-        assessment = assessment_service.get_assessment()
+    def run_analysis(self, user_id: str) -> AnalysisSummaryRead | None:
+        assessment = assessment_service.get_assessment(user_id)
         if assessment is None:
             return None
 
@@ -236,7 +236,7 @@ class AnalysisService:
             workflow_version="analysis_rules_v1",
         )
 
-        return analysis_repository.save(summary)
+        return analysis_repository.save(summary, user_id)
 
 
 analysis_service = AnalysisService()

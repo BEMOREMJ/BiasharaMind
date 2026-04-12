@@ -41,11 +41,12 @@ def _to_schema(record: AssessmentRecord) -> AssessmentRead:
 class AssessmentRepository:
     """PostgreSQL-backed repository for the single active assessment."""
 
-    def get(self) -> AssessmentRead | None:
+    def get(self, user_id: str) -> AssessmentRead | None:
         with session_scope() as session:
             record = session.scalar(
                 select(AssessmentRecord)
                 .options(selectinload(AssessmentRecord.answers))
+                .where(AssessmentRecord.user_id == user_id)
                 .where(AssessmentRecord.is_active.is_(True))
                 .order_by(AssessmentRecord.updated_at.desc())
                 .limit(1)
@@ -54,11 +55,11 @@ class AssessmentRepository:
                 return None
             return _to_schema(record)
 
-    def create(self, assessment: AssessmentRead) -> AssessmentRead:
+    def create(self, assessment: AssessmentRead, user_id: str) -> AssessmentRead:
         with session_scope() as session:
             record = AssessmentRecord(
                 id=assessment.id,
-                user_id=None,
+                user_id=user_id,
                 business_profile_id=None
                 if assessment.business_id == DEFAULT_BUSINESS_ID
                 else assessment.business_id,
@@ -73,7 +74,7 @@ class AssessmentRepository:
             record.answers = [
                 AssessmentAnswerRecord(
                     assessment_id=record.id,
-                    user_id=None,
+                    user_id=user_id,
                     order_index=index,
                     question_key=answer.question_key,
                     section_key=answer.section_key,
@@ -86,17 +87,19 @@ class AssessmentRepository:
             session.refresh(record)
             return _to_schema(record)
 
-    def update(self, assessment: AssessmentRead) -> AssessmentRead:
+    def update(self, assessment: AssessmentRead, user_id: str) -> AssessmentRead:
         with session_scope() as session:
             record = session.scalar(
                 select(AssessmentRecord)
                 .options(selectinload(AssessmentRecord.answers))
                 .where(AssessmentRecord.id == assessment.id)
+                .where(AssessmentRecord.user_id == user_id)
                 .limit(1)
             )
             if record is None:
                 raise ValueError(f"Assessment {assessment.id} not found")
 
+            record.user_id = user_id
             record.status = assessment.status
             record.version = assessment.version
             record.started_at = _to_datetime(assessment.started_at)
@@ -110,7 +113,7 @@ class AssessmentRepository:
             record.answers = [
                 AssessmentAnswerRecord(
                     assessment_id=record.id,
-                    user_id=record.user_id,
+                    user_id=user_id,
                     order_index=index,
                     question_key=answer.question_key,
                     section_key=answer.section_key,
