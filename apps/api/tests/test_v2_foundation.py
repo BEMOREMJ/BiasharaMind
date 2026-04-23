@@ -33,10 +33,10 @@ from app.v2.schemas.snapshots import (
 
 class V2FoundationTests(unittest.TestCase):
     def test_config_registry_validation(self) -> None:
-        self.assertGreaterEqual(len(SCALE_LIBRARY), 3)
+        self.assertGreaterEqual(len(SCALE_LIBRARY), 5)
         self.assertGreaterEqual(len(BUSINESS_PROFILE_FIELD_REGISTRY), 15)
-        self.assertGreaterEqual(len(CORE_SECTION_REGISTRY), 5)
-        self.assertGreaterEqual(len(ADAPTIVE_MODULE_REGISTRY), 2)
+        self.assertEqual(len(CORE_SECTION_REGISTRY), 8)
+        self.assertEqual(len(ADAPTIVE_MODULE_REGISTRY), 4)
         self.assertGreaterEqual(len(ISSUE_TAXONOMY), 5)
         self.assertGreaterEqual(len(CRITICAL_RISK_TAXONOMY), 2)
         self.assertGreaterEqual(len(ACTION_FAMILY_REGISTRY), 5)

@@ -717,6 +717,29 @@ select {
   gap: 0.9rem;
 }
 
+.question-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.question-card__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.question-card__meta {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .score-list__item,
 .priority-list__item {
   display: grid;

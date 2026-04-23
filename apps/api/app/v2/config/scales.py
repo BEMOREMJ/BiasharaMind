@@ -56,6 +56,41 @@ SCALE_LIBRARY: list[ScaleDefinition] = [
         step=1,
     ),
     ScaleDefinition(
+        key="yes_no",
+        label="Yes or no",
+        response_type="single_select",
+        options=[
+            ScaleOption(value="yes", label="Yes", numeric_value=85),
+            ScaleOption(value="no", label="No", numeric_value=25),
+        ],
+    ),
+    ScaleDefinition(
+        key="coverage_4",
+        label="Coverage scale",
+        response_type="single_select",
+        options=[
+            ScaleOption(value="not_visible", label="Not visible", numeric_value=20),
+            ScaleOption(value="basic_visibility", label="Basic visibility", numeric_value=45),
+            ScaleOption(value="usable_visibility", label="Usable visibility", numeric_value=65),
+            ScaleOption(value="strong_visibility", label="Strong visibility", numeric_value=85),
+        ],
+    ),
+    ScaleDefinition(
+        key="business_channel_mix",
+        label="Business channel mix",
+        response_type="single_select",
+        options=[
+            ScaleOption(value="walk_in", label="Walk-in", numeric_value=50),
+            ScaleOption(value="whatsapp", label="WhatsApp", numeric_value=55),
+            ScaleOption(value="social_media", label="Social media", numeric_value=55),
+            ScaleOption(value="phone", label="Phone", numeric_value=50),
+            ScaleOption(value="website", label="Website", numeric_value=60),
+            ScaleOption(value="marketplace", label="Marketplace", numeric_value=58),
+            ScaleOption(value="field_sales", label="Field sales", numeric_value=54),
+            ScaleOption(value="referrals", label="Referrals", numeric_value=62),
+        ],
+    ),
+    ScaleDefinition(
         key="free_text",
         label="Free text response",
         response_type="free_text",

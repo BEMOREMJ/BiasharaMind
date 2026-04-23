@@ -5,7 +5,7 @@ from pydantic import Field, model_validator
 from app.v2.common import V2BaseModel
 
 QuestionInputType = Literal["select", "number", "text", "textarea", "multiselect"]
-ModuleTriggerType = Literal["industry", "size_band", "business_model", "customer_model", "tooling"]
+ModuleTriggerType = Literal["profile_field"]
 TaxonomySeverity = Literal["low", "medium", "high", "critical"]
 ActionHorizon = Literal["now", "next", "later"]
 
@@ -72,6 +72,13 @@ class QuestionDefinition(V2BaseModel):
     help_text: str | None = Field(default=None, max_length=240)
     interpretation_enabled: bool = False
     tags: list[str] = Field(default_factory=list, max_length=10)
+    essential: bool = False
+    scored: bool = True
+    bucket: str = Field(min_length=1, max_length=64)
+    allow_unknown: bool = False
+    allow_prefer_not_to_say: bool = False
+    max_length: int | None = Field(default=None, ge=1, le=4000)
+    multi_select_max_items: int | None = Field(default=None, ge=1, le=12)
 
 
 class SectionDefinition(V2BaseModel):
@@ -87,6 +94,7 @@ class AdaptiveModuleDefinition(V2BaseModel):
     label: str = Field(min_length=1, max_length=120)
     description: str = Field(min_length=1, max_length=280)
     trigger_type: ModuleTriggerType
+    trigger_field: str = Field(min_length=2, max_length=64)
     trigger_values: list[str] = Field(min_length=1, max_length=20)
     questions: list[QuestionDefinition] = Field(min_length=1, max_length=12)
 

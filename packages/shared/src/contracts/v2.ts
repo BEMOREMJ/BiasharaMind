@@ -250,23 +250,134 @@ export const V2BusinessProfileSaveResponseSchema = z.object({
   analysisImpact: V2AnalysisImpactSummarySchema,
 });
 
+export const V2AssessmentStatusSchema = z.enum(["draft", "submitted"]);
+export const V2AssessmentResponseKindSchema = z.enum(["answered", "unknown", "prefer_not_to_say"]);
+
+export const V2QuestionOptionSchema = z.object({
+  value: NonEmptyStringSchema.max(64),
+  label: NonEmptyStringSchema.max(120),
+});
+
+export const V2QuestionAnswerSpecSchema = z.object({
+  responseType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
+  options: z.array(V2QuestionOptionSchema).max(20),
+  minValue: z.number().min(0).max(100).optional().nullable(),
+  maxValue: z.number().min(0).max(100).optional().nullable(),
+  step: z.number().positive().max(100).optional().nullable(),
+  allowUnknown: z.boolean(),
+  allowPreferNotToSay: z.boolean(),
+  maxLength: z.number().int().min(1).max(4000).optional().nullable(),
+  multiSelectMaxItems: z.number().int().min(1).max(12).optional().nullable(),
+});
+
+export const V2QuestionApplicabilitySchema = z.object({
+  sectionId: SectionKeySchema,
+  moduleId: NonEmptyStringSchema.max(64).optional().nullable(),
+  triggerField: NonEmptyStringSchema.max(64).optional().nullable(),
+  triggerValues: z.array(NonEmptyStringSchema.max(64)).max(20),
+});
+
 export const V2QuestionDefinitionSchema = z.object({
-  key: QuestionKeySchema,
+  questionId: QuestionKeySchema,
   prompt: NonEmptyStringSchema.max(320),
-  inputType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
-  required: z.boolean(),
-  scaleKey: NonEmptyStringSchema.max(64).optional().nullable(),
+  questionType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
+  answerSpec: V2QuestionAnswerSpecSchema,
+  essential: z.boolean(),
+  scored: z.boolean(),
+  bucket: NonEmptyStringSchema.max(64),
   helpText: z.string().trim().max(240).optional().nullable(),
-  interpretationEnabled: z.boolean(),
+  order: z.number().int().min(1).max(200),
+  applicability: V2QuestionApplicabilitySchema,
   tags: z.array(NonEmptyStringSchema.max(64)).max(10),
 });
 
 export const V2SectionDefinitionSchema = z.object({
-  key: SectionKeySchema,
-  label: NonEmptyStringSchema.max(120),
+  sectionId: SectionKeySchema,
+  title: NonEmptyStringSchema.max(120),
   description: NonEmptyStringSchema.max(280),
   order: z.number().int().min(1).max(20),
-  questions: z.array(V2QuestionDefinitionSchema).min(1).max(20),
+  isCore: z.boolean(),
+  moduleId: NonEmptyStringSchema.max(64).optional().nullable(),
+  questions: z.array(V2QuestionDefinitionSchema).min(1).max(40),
+});
+
+export const V2AdaptiveModuleSchema = z.object({
+  moduleId: NonEmptyStringSchema.max(64),
+  title: NonEmptyStringSchema.max(120),
+  description: NonEmptyStringSchema.max(280),
+  triggerField: NonEmptyStringSchema.max(64),
+  triggerValues: z.array(NonEmptyStringSchema.max(64)).min(1).max(20),
+  questionIds: z.array(QuestionKeySchema).max(20),
+});
+
+export const V2AssessmentDefinitionSchema = z.object({
+  businessProfileV2Id: EntityIdSchema,
+  questionBankVersion: NonEmptyStringSchema.max(64),
+  sections: z.array(V2SectionDefinitionSchema).min(1).max(20),
+  adaptiveModules: z.array(V2AdaptiveModuleSchema).max(10),
+  totalQuestions: z.number().int().min(1).max(200),
+});
+
+export const V2AssessmentAnswerValueSchema = z.union([
+  z.string(),
+  z.number(),
+  z.array(z.string()),
+  z.null(),
+]);
+
+export const V2AssessmentAnswerPayloadSchema = z.object({
+  questionId: QuestionKeySchema,
+  answerType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
+  responseKind: V2AssessmentResponseKindSchema,
+  value: V2AssessmentAnswerValueSchema.optional().nullable(),
+}).superRefine((value, ctx) => {
+  if (value.responseKind === "answered" && (value.value === null || value.value === undefined)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "answered responses require a value",
+      path: ["value"],
+    });
+  }
+
+  if (value.responseKind !== "answered" && value.value !== null && value.value !== undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "unknown and prefer_not_to_say responses cannot include a value",
+      path: ["value"],
+    });
+  }
+});
+
+export const V2AssessmentWritePayloadSchema = z.object({
+  answers: z.array(V2AssessmentAnswerPayloadSchema).max(200),
+});
+
+export const V2AssessmentAnswerReadSchema = z.object({
+  questionId: QuestionKeySchema,
+  sectionId: SectionKeySchema,
+  moduleId: NonEmptyStringSchema.max(64).optional().nullable(),
+  answerType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
+  responseKind: V2AssessmentResponseKindSchema,
+  value: V2AssessmentAnswerValueSchema.optional().nullable(),
+  isSufficientAnswer: z.boolean().optional().nullable(),
+  orderIndex: z.number().int().min(0).max(500).optional().nullable(),
+});
+
+export const V2AssessmentReadSchema = z.object({
+  id: EntityIdSchema,
+  businessProfileV2Id: EntityIdSchema.optional().nullable(),
+  questionBankVersion: NonEmptyStringSchema.max(64),
+  status: V2AssessmentStatusSchema,
+  completenessHint: z.string().trim().max(64).optional().nullable(),
+  latestDefinitionSnapshot: z.record(z.any()).optional().nullable(),
+  startedAt: TimestampSchema,
+  submittedAt: TimestampSchema.optional().nullable(),
+  answers: z.array(V2AssessmentAnswerReadSchema).max(200),
+});
+
+export const V2AssessmentSaveResponseSchema = z.object({
+  assessment: V2AssessmentReadSchema,
+  analysisImpact: V2AnalysisImpactSummarySchema,
 });
 
 export const V2IssueTagSchema = z.object({
@@ -393,6 +504,16 @@ export const V2SnapshotEnvelopeSchema = V2SnapshotMetadataSchema.extend({
 
 export type V2AIInterpretationStatus = z.infer<typeof V2AIInterpretationStatusSchema>;
 export type V2AnalysisImpactSummary = z.infer<typeof V2AnalysisImpactSummarySchema>;
+export type V2AssessmentAnswerPayload = z.infer<typeof V2AssessmentAnswerPayloadSchema>;
+export type V2AssessmentAnswerRead = z.infer<typeof V2AssessmentAnswerReadSchema>;
+export type V2AssessmentAnswerValue = z.infer<typeof V2AssessmentAnswerValueSchema>;
+export type V2AssessmentDefinition = z.infer<typeof V2AssessmentDefinitionSchema>;
+export type V2AssessmentRead = z.infer<typeof V2AssessmentReadSchema>;
+export type V2AssessmentResponseKind = z.infer<typeof V2AssessmentResponseKindSchema>;
+export type V2AssessmentSaveResponse = z.infer<typeof V2AssessmentSaveResponseSchema>;
+export type V2AssessmentStatus = z.infer<typeof V2AssessmentStatusSchema>;
+export type V2AssessmentWritePayload = z.infer<typeof V2AssessmentWritePayloadSchema>;
+export type V2AdaptiveModule = z.infer<typeof V2AdaptiveModuleSchema>;
 export type V2BudgetFlexibility = z.infer<typeof V2BudgetFlexibilitySchema>;
 export type V2BusinessAgeStage = z.infer<typeof V2BusinessAgeStageSchema>;
 export type V2BusinessProfileCreate = z.infer<typeof V2BusinessProfileCreateSchema>;
@@ -408,7 +529,10 @@ export type V2ImprovementCapacity = z.infer<typeof V2ImprovementCapacitySchema>;
 export type V2LifecycleState = z.infer<typeof V2LifecycleStateSchema>;
 export type V2PrimaryBusinessGoal = z.infer<typeof V2PrimaryBusinessGoalSchema>;
 export type V2PrimaryBusinessType = z.infer<typeof V2PrimaryBusinessTypeSchema>;
+export type V2QuestionAnswerSpec = z.infer<typeof V2QuestionAnswerSpecSchema>;
+export type V2QuestionApplicability = z.infer<typeof V2QuestionApplicabilitySchema>;
 export type V2QuestionDefinition = z.infer<typeof V2QuestionDefinitionSchema>;
+export type V2QuestionOption = z.infer<typeof V2QuestionOptionSchema>;
 export type V2RecordAvailability = z.infer<typeof V2RecordAvailabilitySchema>;
 export type V2SalesChannel = z.infer<typeof V2SalesChannelSchema>;
 export type V2SectionDefinition = z.infer<typeof V2SectionDefinitionSchema>;
