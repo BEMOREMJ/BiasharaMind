@@ -1,0 +1,187 @@
+from app.v2.config.models import QuestionDefinition, SectionDefinition
+
+
+CORE_SECTION_REGISTRY: list[SectionDefinition] = [
+    SectionDefinition(
+        key="operations",
+        label="Operations",
+        description="How daily work is executed, tracked, and stabilized.",
+        order=1,
+        questions=[
+            QuestionDefinition(
+                key="operations_process_documented",
+                prompt="How well are your core operating processes documented and followed?",
+                input_type="select",
+                scale_key="maturity_4",
+                tags=["process", "repeatability"],
+            ),
+            QuestionDefinition(
+                key="operations_owner_visibility",
+                prompt="How clearly does the team know who owns recurring operational work?",
+                input_type="select",
+                scale_key="maturity_4",
+                tags=["ownership"],
+            ),
+            QuestionDefinition(
+                key="operations_bottleneck_notes",
+                prompt="What most often slows down day-to-day operations?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["bottleneck", "evidence"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="sales_marketing",
+        label="Sales and Marketing",
+        description="How demand is generated, tracked, and converted.",
+        order=2,
+        questions=[
+            QuestionDefinition(
+                key="sales_pipeline_repeatability",
+                prompt="How repeatable is your sales process from lead to sale?",
+                input_type="select",
+                scale_key="maturity_4",
+                tags=["pipeline"],
+            ),
+            QuestionDefinition(
+                key="sales_monthly_target_confidence",
+                prompt="How confident are you in hitting your next monthly sales target?",
+                input_type="number",
+                scale_key="numeric_0_10",
+                tags=["forecasting"],
+            ),
+            QuestionDefinition(
+                key="sales_growth_constraint_notes",
+                prompt="What is the main reason sales growth feels harder than it should?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["constraint", "root_cause"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="customer_management",
+        label="Customer Management",
+        description="How customers are followed up, retained, and learned from.",
+        order=3,
+        questions=[
+            QuestionDefinition(
+                key="customer_follow_up_frequency",
+                prompt="How consistently do you follow up with existing customers?",
+                input_type="select",
+                scale_key="frequency_4",
+                tags=["retention"],
+            ),
+            QuestionDefinition(
+                key="customer_feedback_capture",
+                prompt="How do you currently capture and use customer feedback?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["feedback", "specificity"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="finance_reporting",
+        label="Finance and Reporting",
+        description="How financial visibility and reporting support decision-making.",
+        order=4,
+        questions=[
+            QuestionDefinition(
+                key="finance_reporting_frequency",
+                prompt="How often do you review your core financial reporting?",
+                input_type="select",
+                scale_key="frequency_4",
+                tags=["reporting"],
+            ),
+            QuestionDefinition(
+                key="finance_cash_visibility",
+                prompt="On a scale of 0 to 10, how clearly can you see near-term cash position?",
+                input_type="number",
+                scale_key="numeric_0_10",
+                tags=["cash"],
+            ),
+            QuestionDefinition(
+                key="finance_surprise_notes",
+                prompt="What kinds of financial surprises still catch the business off guard?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["risk", "evidence"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="team_workflows",
+        label="Team Workflows",
+        description="How roles, handoffs, and team routines support execution.",
+        order=5,
+        questions=[
+            QuestionDefinition(
+                key="team_role_clarity",
+                prompt="How clear are roles and accountability across the team?",
+                input_type="select",
+                scale_key="maturity_4",
+                tags=["roles"],
+            ),
+            QuestionDefinition(
+                key="team_handoff_breakdowns",
+                prompt="Where do work handoffs break down most often?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["handoff", "root_cause"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="digital_tools",
+        label="Digital Tools",
+        description="How tools support trusted data, coordination, and productivity.",
+        order=6,
+        questions=[
+            QuestionDefinition(
+                key="tools_primary_stack",
+                prompt="How organized and reliable is your current tool stack?",
+                input_type="select",
+                scale_key="maturity_4",
+                tags=["systems"],
+            ),
+            QuestionDefinition(
+                key="tools_manual_work_notes",
+                prompt="What manual work would you most like to reduce?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["automation", "pain_point"],
+            ),
+        ],
+    ),
+    SectionDefinition(
+        key="growth_blockers",
+        label="Growth Blockers",
+        description="The biggest current constraints on business progress.",
+        order=7,
+        questions=[
+            QuestionDefinition(
+                key="growth_blocker_urgency",
+                prompt="How urgent is the main blocker affecting business growth right now?",
+                input_type="select",
+                scale_key="urgency_4",
+                tags=["urgency"],
+            ),
+            QuestionDefinition(
+                key="growth_blocker_primary",
+                prompt="What is the single biggest blocker to growth today?",
+                input_type="textarea",
+                scale_key="free_text",
+                interpretation_enabled=True,
+                tags=["blocker", "root_cause"],
+            ),
+        ],
+    ),
+]

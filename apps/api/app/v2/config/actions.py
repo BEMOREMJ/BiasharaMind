@@ -1,0 +1,81 @@
+from app.v2.config.models import ActionFamilyEntry
+
+
+ACTION_FAMILY_REGISTRY: list[ActionFamilyEntry] = [
+    ActionFamilyEntry(
+        code="PROCESS_STANDARDIZATION",
+        label="Standardize recurring processes",
+        description="Define and stabilize the minimum repeatable workflow for important work.",
+        default_horizon="now",
+        issue_codes=["OPS_PROCESS_GAP", "TEAM_HANDOFF_BREAKDOWN"],
+        critical_risk_codes=["CRITICAL_OWNER_DEPENDENCY"],
+    ),
+    ActionFamilyEntry(
+        code="ACCOUNTABILITY_RHYTHMS",
+        label="Strengthen ownership and review rhythms",
+        description="Clarify owners, checkpoints, and escalation paths for recurring work.",
+        default_horizon="now",
+        issue_codes=["OPS_OWNER_BLINDSPOT", "TEAM_HANDOFF_BREAKDOWN", "OPS_PROCESS_GAP"],
+        critical_risk_codes=["CRITICAL_OWNER_DEPENDENCY"],
+    ),
+    ActionFamilyEntry(
+        code="PIPELINE_DISCIPLINE",
+        label="Improve pipeline discipline",
+        description="Make lead tracking, follow-up, and conversion more repeatable.",
+        default_horizon="next",
+        issue_codes=["SALES_PIPELINE_WEAKNESS"],
+        critical_risk_codes=["CRITICAL_REVENUE_CONCENTRATION"],
+    ),
+    ActionFamilyEntry(
+        code="CUSTOMER_LOOP",
+        label="Build a customer retention loop",
+        description="Create a regular rhythm for follow-up, learning, and repeat business.",
+        default_horizon="next",
+        issue_codes=["CUSTOMER_RETENTION_GAP"],
+        critical_risk_codes=["CRITICAL_REVENUE_CONCENTRATION"],
+    ),
+    ActionFamilyEntry(
+        code="FINANCIAL_CONTROL",
+        label="Improve financial control",
+        description="Increase visibility into cash, collections, and reporting cadence.",
+        default_horizon="now",
+        issue_codes=["FINANCE_VISIBILITY_GAP"],
+        critical_risk_codes=["CRITICAL_CASH_VISIBILITY"],
+    ),
+    ActionFamilyEntry(
+        code="METRIC_VISIBILITY",
+        label="Improve metric visibility",
+        description="Track the few key indicators needed to see progress and detect slippage early.",
+        default_horizon="next",
+        issue_codes=["SALES_PIPELINE_WEAKNESS", "CUSTOMER_RETENTION_GAP", "FINANCE_VISIBILITY_GAP"],
+    ),
+    ActionFamilyEntry(
+        code="TOOL_CONSOLIDATION",
+        label="Reduce fragmented tooling",
+        description="Simplify the tool stack so data and execution are easier to trust.",
+        default_horizon="later",
+        issue_codes=["TOOL_FRAGMENTATION"],
+    ),
+    ActionFamilyEntry(
+        code="DATA_DISCIPLINE",
+        label="Improve data discipline",
+        description="Create a cleaner operating rhythm for data capture and update quality.",
+        default_horizon="next",
+        issue_codes=["TOOL_FRAGMENTATION"],
+    ),
+    ActionFamilyEntry(
+        code="CONSTRAINT_REMOVAL",
+        label="Remove the main growth constraint",
+        description="Focus effort on the single bottleneck with the highest drag on progress.",
+        default_horizon="now",
+        issue_codes=["GROWTH_BLOCKER_UNRESOLVED"],
+        critical_risk_codes=["CRITICAL_REVENUE_CONCENTRATION"],
+    ),
+    ActionFamilyEntry(
+        code="EXECUTION_FOCUS",
+        label="Tighten execution focus",
+        description="Reduce distraction and concentrate the team around the current priority bottleneck.",
+        default_horizon="next",
+        issue_codes=["GROWTH_BLOCKER_UNRESOLVED"],
+    ),
+]
