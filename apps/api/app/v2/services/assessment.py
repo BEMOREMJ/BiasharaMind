@@ -112,6 +112,7 @@ class AssessmentV2Service:
                     question_id=question.key,
                     prompt=question.prompt,
                     question_type=question.input_type,
+                    scale_key=question.scale_key,
                     answer_spec=self._build_answer_spec(question),
                     essential=question.essential,
                     scored=question.scored,
@@ -143,6 +144,7 @@ class AssessmentV2Service:
                     question_id=question.key,
                     prompt=question.prompt,
                     question_type=question.input_type,
+                    scale_key=question.scale_key,
                     answer_spec=self._build_answer_spec(question),
                     essential=question.essential,
                     scored=question.scored,
@@ -178,6 +180,7 @@ class AssessmentV2Service:
                     description=module.description,
                     trigger_field=module.trigger_field,
                     trigger_values=module.trigger_values,
+                    parent_section_key=module.parent_section_key,
                     question_ids=[question.key for question in module.questions],
                 )
             )

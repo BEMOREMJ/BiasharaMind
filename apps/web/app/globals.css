@@ -755,6 +755,19 @@ select {
   align-items: center;
 }
 
+.results-v2-section__header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.results-v2-buckets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
 .insight-list {
   margin: 0;
   padding-left: 1rem;
@@ -783,7 +796,8 @@ select {
   .dashboard-shell,
   .dashboard-grid,
   .form-grid,
-  .info-grid {
+  .info-grid,
+  .results-v2-buckets {
     grid-template-columns: 1fr;
   }
 

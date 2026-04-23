@@ -96,6 +96,7 @@ class AdaptiveModuleDefinition(V2BaseModel):
     trigger_type: ModuleTriggerType
     trigger_field: str = Field(min_length=2, max_length=64)
     trigger_values: list[str] = Field(min_length=1, max_length=20)
+    parent_section_key: str = Field(min_length=2, max_length=64)
     questions: list[QuestionDefinition] = Field(min_length=1, max_length=12)
 
 

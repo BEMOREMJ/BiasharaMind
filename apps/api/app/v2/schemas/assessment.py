@@ -48,6 +48,7 @@ class AssessmentQuestionDefinition(V2BaseModel):
     question_id: str = Field(min_length=2, max_length=64)
     prompt: str = Field(min_length=1, max_length=320)
     question_type: str = Field(min_length=1, max_length=32)
+    scale_key: str | None = Field(default=None, max_length=64)
     answer_spec: QuestionAnswerSpec
     essential: bool = False
     scored: bool = True
@@ -74,6 +75,7 @@ class AdaptiveModuleDefinitionRead(V2BaseModel):
     description: str = Field(min_length=1, max_length=280)
     trigger_field: str = Field(min_length=2, max_length=64)
     trigger_values: list[str] = Field(min_length=1, max_length=20)
+    parent_section_key: str = Field(min_length=2, max_length=64)
     question_ids: list[str] = Field(default_factory=list, max_length=20)
 
 

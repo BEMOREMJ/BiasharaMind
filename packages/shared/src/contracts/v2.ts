@@ -281,6 +281,7 @@ export const V2QuestionDefinitionSchema = z.object({
   questionId: QuestionKeySchema,
   prompt: NonEmptyStringSchema.max(320),
   questionType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
+  scaleKey: NonEmptyStringSchema.max(64).optional().nullable(),
   answerSpec: V2QuestionAnswerSpecSchema,
   essential: z.boolean(),
   scored: z.boolean(),
@@ -307,6 +308,7 @@ export const V2AdaptiveModuleSchema = z.object({
   description: NonEmptyStringSchema.max(280),
   triggerField: NonEmptyStringSchema.max(64),
   triggerValues: z.array(NonEmptyStringSchema.max(64)).min(1).max(20),
+  parentSectionKey: SectionKeySchema,
   questionIds: z.array(QuestionKeySchema).max(20),
 });
 
@@ -378,6 +380,81 @@ export const V2AssessmentReadSchema = z.object({
 export const V2AssessmentSaveResponseSchema = z.object({
   assessment: V2AssessmentReadSchema,
   analysisImpact: V2AnalysisImpactSummarySchema,
+});
+
+export const V2HealthStatusSchema = z.enum([
+  "strong_and_controlled",
+  "stable_but_constrained",
+  "vulnerable",
+  "fragile",
+  "critical",
+]);
+
+export const V2CoverageLabelSchema = z.enum([
+  "high_coverage",
+  "good_coverage",
+  "partial_coverage",
+  "low_coverage",
+]);
+
+export const V2ConfidenceLabelSchema = z.enum([
+  "high_confidence",
+  "moderate_confidence",
+  "low_confidence",
+]);
+
+export const V2BucketScoreSchema = z.object({
+  bucket: NonEmptyStringSchema.max(32),
+  score: z.number().min(0).max(100),
+  contributingQuestionCount: z.number().int().min(0).max(100),
+});
+
+export const V2SectionScoreSchema = z.object({
+  sectionId: SectionKeySchema,
+  title: NonEmptyStringSchema.max(120),
+  score: z.number().min(0).max(100),
+  bucketScores: z.array(V2BucketScoreSchema).max(3),
+  completeness: z.number().min(0).max(100),
+  completenessLabel: V2CoverageLabelSchema,
+  evidenceConfidence: z.number().min(0).max(100),
+  moduleContributionScore: z.number().min(0).max(100).optional().nullable(),
+  moduleContributionWeight: z.number().min(0).max(1).optional().nullable(),
+});
+
+export const V2CompletenessSummarySchema = z.object({
+  overall: z.number().min(0).max(100),
+  label: V2CoverageLabelSchema,
+  essentialAnsweredSufficiently: z.number().int().min(0).max(500),
+  essentialApplicable: z.number().int().min(0).max(500),
+  optionalAnsweredSufficiently: z.number().int().min(0).max(500),
+  optionalApplicable: z.number().int().min(0).max(500),
+});
+
+export const V2EvidenceConfidenceSummarySchema = z.object({
+  score: z.number().min(0).max(100),
+  label: V2ConfidenceLabelSchema,
+  specificity: z.number().min(0).max(100),
+  quantification: z.number().min(0).max(100),
+  internalConsistency: z.number().min(0).max(100),
+  corroboration: z.number().min(0).max(100),
+  keyLimitations: z.array(NonEmptyStringSchema.max(320)).max(20),
+});
+
+export const V2StatusCapResultSchema = z.object({
+  code: NonEmptyStringSchema.max(64),
+  label: NonEmptyStringSchema.max(160),
+  cappedStatus: V2HealthStatusSchema,
+  reason: NonEmptyStringSchema.max(320),
+});
+
+export const V2AnalysisScoreSummarySchema = z.object({
+  overallHealthScore: z.number().min(0).max(100),
+  overallStatus: V2HealthStatusSchema,
+  sectionScores: z.array(V2SectionScoreSchema).max(20),
+  completeness: V2CompletenessSummarySchema,
+  evidenceConfidence: V2EvidenceConfidenceSummarySchema,
+  activeCriticalRiskCount: z.number().int().min(0).max(100),
+  capsApplied: z.array(V2StatusCapResultSchema).max(10),
 });
 
 export const V2IssueTagSchema = z.object({
@@ -468,6 +545,16 @@ export const V2ExplainabilitySchema = z.object({
   watchlistRationales: z.array(V2WatchlistRationaleSchema).max(20),
 });
 
+export const V2AnalysisRunSchema = z.object({
+  id: EntityIdSchema,
+  analysisFamily: NonEmptyStringSchema.max(64),
+  metadata: V2VersionMetadataSchema,
+  lifecycle: V2LifecycleStateSchema,
+  summary: V2AnalysisScoreSummarySchema,
+  explainability: V2ExplainabilitySchema,
+  createdAt: TimestampSchema,
+});
+
 export const V2SnapshotMetadataSchema = z.object({
   metadata: V2VersionMetadataSchema,
   lifecycle: V2LifecycleStateSchema,
@@ -504,6 +591,8 @@ export const V2SnapshotEnvelopeSchema = V2SnapshotMetadataSchema.extend({
 
 export type V2AIInterpretationStatus = z.infer<typeof V2AIInterpretationStatusSchema>;
 export type V2AnalysisImpactSummary = z.infer<typeof V2AnalysisImpactSummarySchema>;
+export type V2AnalysisRun = z.infer<typeof V2AnalysisRunSchema>;
+export type V2AnalysisScoreSummary = z.infer<typeof V2AnalysisScoreSummarySchema>;
 export type V2AssessmentAnswerPayload = z.infer<typeof V2AssessmentAnswerPayloadSchema>;
 export type V2AssessmentAnswerRead = z.infer<typeof V2AssessmentAnswerReadSchema>;
 export type V2AssessmentAnswerValue = z.infer<typeof V2AssessmentAnswerValueSchema>;
@@ -514,6 +603,7 @@ export type V2AssessmentSaveResponse = z.infer<typeof V2AssessmentSaveResponseSc
 export type V2AssessmentStatus = z.infer<typeof V2AssessmentStatusSchema>;
 export type V2AssessmentWritePayload = z.infer<typeof V2AssessmentWritePayloadSchema>;
 export type V2AdaptiveModule = z.infer<typeof V2AdaptiveModuleSchema>;
+export type V2BucketScore = z.infer<typeof V2BucketScoreSchema>;
 export type V2BudgetFlexibility = z.infer<typeof V2BudgetFlexibilitySchema>;
 export type V2BusinessAgeStage = z.infer<typeof V2BusinessAgeStageSchema>;
 export type V2BusinessProfileCreate = z.infer<typeof V2BusinessProfileCreateSchema>;
@@ -521,10 +611,15 @@ export type V2BusinessProfileFieldDefinition = z.infer<typeof V2BusinessProfileF
 export type V2BusinessProfileRead = z.infer<typeof V2BusinessProfileReadSchema>;
 export type V2BusinessProfileSaveResponse = z.infer<typeof V2BusinessProfileSaveResponseSchema>;
 export type V2BusinessProfileUpdate = z.infer<typeof V2BusinessProfileUpdateSchema>;
+export type V2CompletenessSummary = z.infer<typeof V2CompletenessSummarySchema>;
 export type V2ComplianceSectorSensitivity = z.infer<typeof V2ComplianceSectorSensitivitySchema>;
+export type V2ConfidenceLabel = z.infer<typeof V2ConfidenceLabelSchema>;
 export type V2CustomerType = z.infer<typeof V2CustomerTypeSchema>;
+export type V2CoverageLabel = z.infer<typeof V2CoverageLabelSchema>;
+export type V2EvidenceConfidenceSummary = z.infer<typeof V2EvidenceConfidenceSummarySchema>;
 export type V2Explainability = z.infer<typeof V2ExplainabilitySchema>;
 export type V2FreshnessState = z.infer<typeof V2FreshnessStateSchema>;
+export type V2HealthStatus = z.infer<typeof V2HealthStatusSchema>;
 export type V2ImprovementCapacity = z.infer<typeof V2ImprovementCapacitySchema>;
 export type V2LifecycleState = z.infer<typeof V2LifecycleStateSchema>;
 export type V2PrimaryBusinessGoal = z.infer<typeof V2PrimaryBusinessGoalSchema>;
@@ -536,8 +631,10 @@ export type V2QuestionOption = z.infer<typeof V2QuestionOptionSchema>;
 export type V2RecordAvailability = z.infer<typeof V2RecordAvailabilitySchema>;
 export type V2SalesChannel = z.infer<typeof V2SalesChannelSchema>;
 export type V2SectionDefinition = z.infer<typeof V2SectionDefinitionSchema>;
+export type V2SectionScore = z.infer<typeof V2SectionScoreSchema>;
 export type V2SnapshotEnvelope = z.infer<typeof V2SnapshotEnvelopeSchema>;
 export type V2SnapshotMetadata = z.infer<typeof V2SnapshotMetadataSchema>;
+export type V2StatusCapResult = z.infer<typeof V2StatusCapResultSchema>;
 export type V2TeamSizeBand = z.infer<typeof V2TeamSizeBandSchema>;
 export type V2TextInterpretationOutput = z.infer<typeof V2TextInterpretationOutputSchema>;
 export type V2TimeCapacity = z.infer<typeof V2TimeCapacitySchema>;

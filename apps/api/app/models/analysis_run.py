@@ -18,8 +18,18 @@ class AnalysisRunRecord(Base):
         nullable=True,
         index=True,
     )
+    business_profile_v2_id: Mapped[str | None] = mapped_column(
+        ForeignKey("business_profiles_v2.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     assessment_id: Mapped[str | None] = mapped_column(
         ForeignKey("assessments.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    assessment_v2_id: Mapped[str | None] = mapped_column(
+        ForeignKey("assessments_v2.id", ondelete="SET NULL"),
         nullable=True,
         index=True,
     )

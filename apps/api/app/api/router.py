@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     routes_analysis,
+    routes_analysis_v2,
     routes_assessment,
     routes_assessment_v2,
     routes_analyses,
@@ -19,6 +20,7 @@ from app.api.routes import (
 api_router = APIRouter()
 api_router.include_router(routes_health.router, tags=["health"])
 api_router.include_router(routes_analysis.router, tags=["analysis"])
+api_router.include_router(routes_analysis_v2.router, tags=["analysis-v2"])
 api_router.include_router(routes_assessment.router, tags=["assessment"])
 api_router.include_router(routes_assessment_v2.router, tags=["assessment-v2"])
 api_router.include_router(routes_business_profile.router, tags=["business-profile"])

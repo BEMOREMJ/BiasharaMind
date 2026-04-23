@@ -55,6 +55,20 @@ class AssessmentV2Repository:
                 return None
             return _to_schema(record)
 
+    def get_latest_submitted(self, user_id: str) -> AssessmentRead | None:
+        with session_scope() as session:
+            record = session.scalar(
+                select(AssessmentV2Record)
+                .options(selectinload(AssessmentV2Record.answers))
+                .where(AssessmentV2Record.user_id == user_id)
+                .where(AssessmentV2Record.status == "submitted")
+                .order_by(AssessmentV2Record.updated_at.desc())
+                .limit(1)
+            )
+            if record is None:
+                return None
+            return _to_schema(record)
+
     def get_by_id(self, assessment_id: str, user_id: str) -> AssessmentRead | None:
         with session_scope() as session:
             record = session.scalar(
