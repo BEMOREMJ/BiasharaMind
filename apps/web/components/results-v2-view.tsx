@@ -1,6 +1,6 @@
 "use client";
 
-import { type V2AnalysisRun, type V2SectionScore } from "@biasharamind/shared";
+import { type V2AnalysisRun, type V2PriorityItem, type V2SectionScore } from "@biasharamind/shared";
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/badge";
@@ -72,6 +72,49 @@ function SectionScoreCard({ section }: { section: V2SectionScore }) {
           Adaptive module contribution: {formatScore(section.moduleContributionScore)} at {(section.moduleContributionWeight ?? 0) * 100}% of the parent section blend.
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function PriorityCard({
+  priority,
+  index,
+}: {
+  priority: V2PriorityItem;
+  index: number;
+}) {
+  return (
+    <div className="priority-list__item">
+      <div className="results-v2-section__header">
+        <div>
+          <strong>
+            {index + 1}. {priority.title}
+          </strong>
+          <p className="muted-copy">{priority.whySelected}</p>
+        </div>
+        <Badge tone="success">{formatScore(priority.adjustedPriorityScore)}</Badge>
+      </div>
+      <div className="stats-row">
+        <div className="stat-chip">
+          <strong>{titleize(priority.recommendedActionFamily)}</strong>
+          <span>Action family</span>
+        </div>
+        <div className="stat-chip">
+          <strong>{priority.criticalRiskLinks.length}</strong>
+          <span>Linked critical risks</span>
+        </div>
+      </div>
+      <ul className="list-copy">
+        {priority.dependencies.map((dependency) => (
+          <li key={dependency}>Dependency: {dependency}</li>
+        ))}
+        {priority.sequencingNotes.map((note) => (
+          <li key={note}>Sequencing: {note}</li>
+        ))}
+        {priority.suggestedSuccessMetrics.map((metric) => (
+          <li key={metric}>Success metric: {metric}</li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -153,8 +196,8 @@ export function ResultsV2View() {
           </Badge>
           <SectionHeader
             title="Results V2"
-            eyebrow="Slice 4"
-            description="This view shows the deterministic V2 health score, status, coverage, confidence, and explainability stored in the latest V2 analysis run."
+            eyebrow="Slice 5"
+            description="This view shows the deterministic V2 score, diagnosis, critical risks, priorities, and roadmap inputs stored in the latest V2 analysis run."
           />
           <div className="button-row">
             <PrimaryButton disabled={isLoading || isRunning} onClick={handleRunAnalysis} type="button">
@@ -231,9 +274,50 @@ export function ResultsV2View() {
                   <dt>Version set</dt>
                   <dd>{analysis.metadata.analysisEngineVersion}</dd>
                 </div>
+                <div>
+                  <dt>AI interpretation</dt>
+                  <dd>{formatStatus(analysis.lifecycle.aiInterpretationStatus)}</dd>
+                </div>
               </dl>
             </DashboardCard>
           </div>
+
+          <DashboardCard title="Text interpretation" description="AI interpretation enriches evidence and contradiction handling without changing deterministic scores.">
+            <div className="dashboard-grid dashboard-grid--results">
+              <div>
+                <h3 className="profile-section__title">Interpreter status</h3>
+                <p className="muted-copy">
+                  Provider: {analysis.textInterpretation.providerName ?? "Not configured"}
+                  {" · "}
+                  Prompt version: {analysis.textInterpretation.promptVersion ?? "Not recorded"}
+                </p>
+                {analysis.textInterpretation.status !== "complete" ? (
+                  <div className="status-banner status-banner--warning">
+                    AI interpretation is {formatStatus(analysis.textInterpretation.status)}. Deterministic scoring still stands, but some text evidence is incomplete.
+                  </div>
+                ) : (
+                  <div className="status-banner status-banner--success">
+                    AI text interpretation completed and was stored alongside this analysis run.
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3 className="profile-section__title">Interpretation notes</h3>
+                {analysis.textInterpretation.outputs.length > 0 ? (
+                  <ul className="list-copy">
+                    {analysis.textInterpretation.outputs.map((output) => (
+                      <li key={output.questionKey}>
+                        {output.summary ?? `${titleize(output.questionKey)} did not yield a usable interpretation.`}
+                        {output.contradictionFlags.length > 0 ? ` Contradictions: ${output.contradictionFlags.map((item) => item.detail).join(" ")}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="muted-copy">No saved text interpretations are available for this run.</p>
+                )}
+              </div>
+            </div>
+          </DashboardCard>
 
           <DashboardCard title="Section scores" description="Core V2 section scores with bucket composition and adaptive module blend where applicable.">
             <div className="score-list">
@@ -242,6 +326,120 @@ export function ResultsV2View() {
               ))}
             </div>
           </DashboardCard>
+
+          <div className="dashboard-grid dashboard-grid--results">
+            <DashboardCard title="Diagnosis" description="Deterministic synthesis from the saved V2 analysis output.">
+              <dl className="summary-list">
+                <div>
+                  <dt>Strongest areas</dt>
+                  <dd>{analysis.diagnosis.strongestAreas.join(", ") || "Not available"}</dd>
+                </div>
+                <div>
+                  <dt>Weakest areas</dt>
+                  <dd>{analysis.diagnosis.weakestAreas.join(", ") || "Not available"}</dd>
+                </div>
+                <div>
+                  <dt>Primary bottleneck</dt>
+                  <dd>{analysis.diagnosis.primaryBottleneck ?? "Not available"}</dd>
+                </div>
+              </dl>
+              <div>
+                <h3 className="profile-section__title">Top constraints</h3>
+                <ul className="list-copy">
+                  {analysis.diagnosis.topConstraints.map((constraint) => (
+                    <li key={constraint}>{constraint}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="profile-section__title">Root-cause patterns</h3>
+                <ul className="list-copy">
+                  {analysis.diagnosis.rootCausePatterns.map((pattern) => (
+                    <li key={pattern}>{pattern}</li>
+                  ))}
+                </ul>
+              </div>
+            </DashboardCard>
+
+            <DashboardCard title="Critical risks" description="Critical risks remain separate from normal issues and can force stabilization-first action.">
+              {analysis.criticalRisks.length > 0 ? (
+                <div className="score-list">
+                  {analysis.criticalRisks.map((risk) => (
+                    <div className="score-list__item" key={risk.code}>
+                      <div>
+                        <strong>{risk.title}</strong>
+                        <p className="muted-copy">{risk.evidenceSummary}</p>
+                      </div>
+                      <Badge tone="error">{titleize(risk.severity)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted-copy">No active critical risks were materialized from the current deterministic inputs.</p>
+              )}
+            </DashboardCard>
+          </div>
+
+          <DashboardCard title="Top priorities" description="These are the top 3 priorities after formula ranking and deterministic override rules.">
+            {analysis.topPriorities.length > 0 ? (
+              <div className="priority-list">
+                {analysis.topPriorities.map((priority, index) => (
+                  <PriorityCard index={index} key={priority.issueCode} priority={priority} />
+                ))}
+              </div>
+            ) : (
+              <p className="muted-copy">No priorities have been selected yet.</p>
+            )}
+          </DashboardCard>
+
+          <div className="dashboard-grid dashboard-grid--results">
+            <DashboardCard title="Watchlist" description="These issues matter, but they were held back by confidence, feasibility, or sequencing rules.">
+              {analysis.watchlist.length > 0 ? (
+                <div className="score-list">
+                  {analysis.watchlist.map((item) => (
+                    <div className="score-list__item" key={item.issueCode}>
+                      <div>
+                        <strong>{item.title}</strong>
+                        <p className="muted-copy">{item.watchlistReason}</p>
+                      </div>
+                      <Badge tone="warning">{formatScore(item.adjustedPriorityScore)}</Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted-copy">No watchlist items were needed for this run.</p>
+              )}
+            </DashboardCard>
+
+            <DashboardCard title="Roadmap inputs" description="This package is the deterministic handoff for Slice 6 roadmap generation.">
+              <dl className="summary-list">
+                <div>
+                  <dt>Selected action families</dt>
+                  <dd>{analysis.roadmapInputs.selectedActionFamilies.map(titleize).join(", ") || "Not available"}</dd>
+                </div>
+                <div>
+                  <dt>Dependencies</dt>
+                  <dd>{analysis.roadmapInputs.dependencies.join(", ") || "Not available"}</dd>
+                </div>
+              </dl>
+              <div>
+                <h3 className="profile-section__title">Sequencing notes</h3>
+                <ul className="list-copy">
+                  {analysis.roadmapInputs.sequencingNotes.map((note) => (
+                    <li key={note}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="profile-section__title">Suggested success metrics</h3>
+                <ul className="list-copy">
+                  {analysis.roadmapInputs.suggestedSuccessMetrics.map((metric) => (
+                    <li key={metric}>{metric}</li>
+                  ))}
+                </ul>
+              </div>
+            </DashboardCard>
+          </div>
 
           <div className="dashboard-grid dashboard-grid--results">
             <DashboardCard title="Status caps" description="Caps are applied after overall score calculation.">
@@ -311,6 +509,23 @@ export function ResultsV2View() {
                   {analysis.explainability.missingOrWeakEvidence.map((gap, index) => (
                     <li key={`${gap.area}-${index}`}>{gap.detail}</li>
                   ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="profile-section__title">Contradictions and fallbacks</h3>
+                <ul className="list-copy">
+                  {analysis.textInterpretation.outputs.flatMap((output) =>
+                    output.contradictionFlags.map((flag) => (
+                      <li key={`${output.questionKey}-${flag.code}`}>{flag.detail}</li>
+                    )),
+                  )}
+                  {analysis.textInterpretation.outputs
+                    .filter((output) => output.fallback.used && output.fallback.reason)
+                    .map((output) => (
+                      <li key={`${output.questionKey}-fallback`}>
+                        {titleize(output.questionKey)} fallback: {output.fallback.reason}
+                      </li>
+                    ))}
                 </ul>
               </div>
             </div>

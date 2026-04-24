@@ -282,6 +282,7 @@ export const V2QuestionDefinitionSchema = z.object({
   prompt: NonEmptyStringSchema.max(320),
   questionType: z.enum(["select", "number", "text", "textarea", "multiselect"]),
   scaleKey: NonEmptyStringSchema.max(64).optional().nullable(),
+  interpretationEnabled: z.boolean(),
   answerSpec: V2QuestionAnswerSpecSchema,
   essential: z.boolean(),
   scored: z.boolean(),
@@ -489,11 +490,30 @@ export const V2TextInterpretationOutputSchema = z.object({
   summary: z.string().trim().max(500).optional().nullable(),
   issueTags: z.array(V2IssueTagSchema).max(10),
   rootCauseTags: z.array(V2RootCauseTagSchema).max(10),
+  affectedDimensions: z.array(NonEmptyStringSchema.max(64)).max(10),
+  severityHint: z.enum(["low", "medium", "high", "critical"]).optional().nullable(),
   contradictionFlags: z.array(V2ContradictionFlagSchema).max(10),
   evidenceSpecificity: z.enum(["low", "medium", "high"]).optional().nullable(),
   evidenceStrength: z.enum(["weak", "mixed", "strong"]).optional().nullable(),
   interpretationConfidence: z.enum(["low", "medium", "high"]).optional().nullable(),
+  evidenceSnippets: z.array(z.string().trim().max(240)).max(5),
   fallback: V2InterpretationFallbackSchema,
+});
+
+export const V2TextInterpretationInputSchema = z.object({
+  questionKey: QuestionKeySchema,
+  sectionKey: SectionKeySchema,
+  answerText: z.string().trim().min(1).max(4000),
+  businessProfileContext: z.record(z.any()),
+  sourceRef: z.string().trim().max(120).optional().nullable(),
+});
+
+export const V2TextInterpretationSnapshotSchema = z.object({
+  status: V2AIInterpretationStatusSchema,
+  promptVersion: z.string().trim().max(64).optional().nullable(),
+  providerName: z.string().trim().max(64).optional().nullable(),
+  inputs: z.array(V2TextInterpretationInputSchema).max(200),
+  outputs: z.array(V2TextInterpretationOutputSchema).max(200),
 });
 
 export const V2ScoreDriverSchema = z.object({
@@ -545,12 +565,95 @@ export const V2ExplainabilitySchema = z.object({
   watchlistRationales: z.array(V2WatchlistRationaleSchema).max(20),
 });
 
+export const V2CriticalRiskSchema = z.object({
+  code: NonEmptyStringSchema.max(64),
+  title: NonEmptyStringSchema.max(160),
+  severity: NonEmptyStringSchema.max(32),
+  evidenceQuestionIds: z.array(QuestionKeySchema).max(20),
+  evidenceSummary: NonEmptyStringSchema.max(320),
+  recommendedActionFamilies: z.array(NonEmptyStringSchema.max(64)).max(10),
+});
+
+export const V2IssueCandidateSchema = z.object({
+  issueCode: NonEmptyStringSchema.max(64),
+  title: NonEmptyStringSchema.max(160),
+  dimension: NonEmptyStringSchema.max(64),
+  evidenceQuestionIds: z.array(QuestionKeySchema).max(20),
+  evidenceSummary: NonEmptyStringSchema.max(400),
+  severityScore: z.number().min(0).max(100),
+  urgencyScore: z.number().min(0).max(100),
+  impactScore: z.number().min(0).max(100),
+  feasibilityScore: z.number().min(0).max(100),
+  leverageScore: z.number().min(0).max(100),
+  confidenceScore: z.number().min(0).max(100),
+  criticalRiskLinks: z.array(NonEmptyStringSchema.max(64)).max(10),
+  recommendedActionFamily: NonEmptyStringSchema.max(64),
+  dependencies: z.array(NonEmptyStringSchema.max(200)).max(10),
+  goalFitAdjustment: z.number().min(0.8).max(1.2),
+  priorityScore: z.number().min(0).max(100),
+  adjustedPriorityScore: z.number().min(0).max(120),
+});
+
+export const V2PriorityItemSchema = z.object({
+  issueCode: NonEmptyStringSchema.max(64),
+  title: NonEmptyStringSchema.max(160),
+  recommendedActionFamily: NonEmptyStringSchema.max(64),
+  adjustedPriorityScore: z.number().min(0).max(120),
+  whySelected: NonEmptyStringSchema.max(400),
+  sequencingNotes: z.array(NonEmptyStringSchema.max(240)).max(8),
+  dependencies: z.array(NonEmptyStringSchema.max(200)).max(10),
+  criticalRiskLinks: z.array(NonEmptyStringSchema.max(64)).max(10),
+  suggestedSuccessMetrics: z.array(NonEmptyStringSchema.max(200)).max(6),
+});
+
+export const V2WatchlistItemSchema = z.object({
+  issueCode: NonEmptyStringSchema.max(64),
+  title: NonEmptyStringSchema.max(160),
+  recommendedActionFamily: NonEmptyStringSchema.max(64),
+  adjustedPriorityScore: z.number().min(0).max(120),
+  watchlistReason: NonEmptyStringSchema.max(320),
+  criticalRiskLinks: z.array(NonEmptyStringSchema.max(64)).max(10),
+});
+
+export const V2DiagnosisSummarySchema = z.object({
+  strongestAreas: z.array(NonEmptyStringSchema.max(160)).max(3),
+  weakestAreas: z.array(NonEmptyStringSchema.max(160)).max(3),
+  primaryBottleneck: z.string().trim().max(160).optional().nullable(),
+  topConstraints: z.array(NonEmptyStringSchema.max(160)).max(5),
+  rootCausePatterns: z.array(NonEmptyStringSchema.max(240)).max(5),
+});
+
+export const V2RoadmapInputItemSchema = z.object({
+  issueCode: NonEmptyStringSchema.max(64),
+  actionFamily: NonEmptyStringSchema.max(64),
+  dependencies: z.array(NonEmptyStringSchema.max(200)).max(10),
+  feasibilityContext: NonEmptyStringSchema.max(320),
+  suggestedSuccessMetrics: z.array(NonEmptyStringSchema.max(200)).max(6),
+  sequencingNotes: z.array(NonEmptyStringSchema.max(240)).max(8),
+});
+
+export const V2RoadmapInputPackageSchema = z.object({
+  selectedActionFamilies: z.array(NonEmptyStringSchema.max(64)).max(10),
+  dependencies: z.array(NonEmptyStringSchema.max(200)).max(20),
+  feasibilityContext: z.array(NonEmptyStringSchema.max(320)).max(10),
+  suggestedSuccessMetrics: z.array(NonEmptyStringSchema.max(200)).max(12),
+  sequencingNotes: z.array(NonEmptyStringSchema.max(240)).max(12),
+  items: z.array(V2RoadmapInputItemSchema).max(5),
+});
+
 export const V2AnalysisRunSchema = z.object({
   id: EntityIdSchema,
   analysisFamily: NonEmptyStringSchema.max(64),
   metadata: V2VersionMetadataSchema,
   lifecycle: V2LifecycleStateSchema,
   summary: V2AnalysisScoreSummarySchema,
+  criticalRisks: z.array(V2CriticalRiskSchema).max(10),
+  diagnosis: V2DiagnosisSummarySchema,
+  issueCandidates: z.array(V2IssueCandidateSchema).max(20),
+  topPriorities: z.array(V2PriorityItemSchema).max(3),
+  watchlist: z.array(V2WatchlistItemSchema).max(2),
+  roadmapInputs: V2RoadmapInputPackageSchema,
+  textInterpretation: V2TextInterpretationSnapshotSchema,
   explainability: V2ExplainabilitySchema,
   createdAt: TimestampSchema,
 });
@@ -614,21 +717,27 @@ export type V2BusinessProfileUpdate = z.infer<typeof V2BusinessProfileUpdateSche
 export type V2CompletenessSummary = z.infer<typeof V2CompletenessSummarySchema>;
 export type V2ComplianceSectorSensitivity = z.infer<typeof V2ComplianceSectorSensitivitySchema>;
 export type V2ConfidenceLabel = z.infer<typeof V2ConfidenceLabelSchema>;
+export type V2CriticalRisk = z.infer<typeof V2CriticalRiskSchema>;
 export type V2CustomerType = z.infer<typeof V2CustomerTypeSchema>;
 export type V2CoverageLabel = z.infer<typeof V2CoverageLabelSchema>;
+export type V2DiagnosisSummary = z.infer<typeof V2DiagnosisSummarySchema>;
 export type V2EvidenceConfidenceSummary = z.infer<typeof V2EvidenceConfidenceSummarySchema>;
 export type V2Explainability = z.infer<typeof V2ExplainabilitySchema>;
 export type V2FreshnessState = z.infer<typeof V2FreshnessStateSchema>;
 export type V2HealthStatus = z.infer<typeof V2HealthStatusSchema>;
 export type V2ImprovementCapacity = z.infer<typeof V2ImprovementCapacitySchema>;
+export type V2IssueCandidate = z.infer<typeof V2IssueCandidateSchema>;
 export type V2LifecycleState = z.infer<typeof V2LifecycleStateSchema>;
 export type V2PrimaryBusinessGoal = z.infer<typeof V2PrimaryBusinessGoalSchema>;
 export type V2PrimaryBusinessType = z.infer<typeof V2PrimaryBusinessTypeSchema>;
+export type V2PriorityItem = z.infer<typeof V2PriorityItemSchema>;
 export type V2QuestionAnswerSpec = z.infer<typeof V2QuestionAnswerSpecSchema>;
 export type V2QuestionApplicability = z.infer<typeof V2QuestionApplicabilitySchema>;
 export type V2QuestionDefinition = z.infer<typeof V2QuestionDefinitionSchema>;
 export type V2QuestionOption = z.infer<typeof V2QuestionOptionSchema>;
 export type V2RecordAvailability = z.infer<typeof V2RecordAvailabilitySchema>;
+export type V2RoadmapInputItem = z.infer<typeof V2RoadmapInputItemSchema>;
+export type V2RoadmapInputPackage = z.infer<typeof V2RoadmapInputPackageSchema>;
 export type V2SalesChannel = z.infer<typeof V2SalesChannelSchema>;
 export type V2SectionDefinition = z.infer<typeof V2SectionDefinitionSchema>;
 export type V2SectionScore = z.infer<typeof V2SectionScoreSchema>;
@@ -637,6 +746,9 @@ export type V2SnapshotMetadata = z.infer<typeof V2SnapshotMetadataSchema>;
 export type V2StatusCapResult = z.infer<typeof V2StatusCapResultSchema>;
 export type V2TeamSizeBand = z.infer<typeof V2TeamSizeBandSchema>;
 export type V2TextInterpretationOutput = z.infer<typeof V2TextInterpretationOutputSchema>;
+export type V2TextInterpretationInput = z.infer<typeof V2TextInterpretationInputSchema>;
+export type V2TextInterpretationSnapshot = z.infer<typeof V2TextInterpretationSnapshotSchema>;
 export type V2TimeCapacity = z.infer<typeof V2TimeCapacitySchema>;
 export type V2ToolHireOpenness = z.infer<typeof V2ToolHireOpennessSchema>;
 export type V2VersionMetadata = z.infer<typeof V2VersionMetadataSchema>;
+export type V2WatchlistItem = z.infer<typeof V2WatchlistItemSchema>;

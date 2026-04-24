@@ -36,6 +36,11 @@ class Settings(BaseSettings):
             "API_SUPABASE_SERVICE_ROLE_KEY",
         ),
     )
+    ai_interpretation_provider: str = "disabled"
+    ai_interpretation_endpoint: str | None = None
+    ai_interpretation_api_key: str | None = None
+    ai_interpretation_model: str | None = None
+    ai_interpretation_timeout_seconds: int = 20
 
     model_config = SettingsConfigDict(
         env_prefix="API_",
@@ -67,7 +72,14 @@ class Settings(BaseSettings):
             return normalized.replace("postgres://", "postgresql+psycopg://", 1)
         return normalized
 
-    @field_validator("supabase_url", "supabase_service_role_key", mode="before")
+    @field_validator(
+        "supabase_url",
+        "supabase_service_role_key",
+        "ai_interpretation_endpoint",
+        "ai_interpretation_api_key",
+        "ai_interpretation_model",
+        mode="before",
+    )
     @classmethod
     def normalize_optional_string(cls, value: str | None) -> str | None:
         if value is None:

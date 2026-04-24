@@ -17,10 +17,21 @@ from app.v2.schemas.assessment import (
     AssessmentStatus,
     AssessmentWritePayload,
 )
+from app.v2.schemas.diagnosis import (
+    CriticalRiskRead,
+    DiagnosisSummaryRead,
+    IssueCandidateRead,
+    PriorityRead,
+    RoadmapInputItemRead,
+    RoadmapInputPackageRead,
+    WatchlistItemRead,
+)
 from app.v2.schemas.explainability import ExplainabilitySnapshot
+from app.v2.schemas.interpretation import TextInterpretationOutput
 from app.v2.schemas.lifecycle import AnalysisLifecycleState, FreshnessState
 from app.v2.schemas.meta import CURRENT_V2_VERSION_METADATA
 from app.v2.schemas.profile import BusinessProfileV2Read, ImprovementCapacityPayload
+from app.v2.schemas.snapshots import TextInterpretationSnapshot
 from app.v2.schemas.scoring import (
     AnalysisRunRead,
     AnalysisScoreSummary,
@@ -34,6 +45,12 @@ from app.v2.schemas.scoring import (
 )
 from app.v2.services.analysis import AnalysisV2Service, MissingSubmittedAssessmentError
 from app.v2.services.assessment import AssessmentV2Service
+from app.v2.services.diagnosis import (
+    DiagnosisContext,
+    generate_issue_candidates,
+    materialize_critical_risks,
+    rank_priorities,
+)
 from app.v2.services.scoring import (
     ScoreContext,
     apply_status_caps,
@@ -115,6 +132,13 @@ class FakeAnalysisRepository:
             metadata=payload["metadata"],
             lifecycle=payload["lifecycle"],
             summary=payload["deterministicScores"],
+            critical_risks=payload["criticalRisks"],
+            diagnosis=payload["diagnosis"],
+            issue_candidates=payload["issueCandidates"],
+            top_priorities=payload["topPriorities"],
+            watchlist=payload["watchlist"],
+            roadmap_inputs=payload["roadmapInputs"],
+            text_interpretation=payload["textInterpretation"],
             explainability=payload["explainability"],
             created_at="2026-04-23T12:00:00+00:00",
         )
@@ -245,6 +269,75 @@ def sample_analysis_run() -> AnalysisRunRead:
             ),
             active_critical_risk_count=0,
             caps_applied=[],
+        ),
+        critical_risks=[
+            CriticalRiskRead(
+                code="CRITICAL_CASH_PRESSURE",
+                title="Cash pressure is acute enough to threaten normal operations",
+                severity="critical",
+                evidence_question_ids=["risk_cash_pressure_check"],
+                evidence_summary="Recent cash pressure was flagged directly in the risk checks.",
+                recommended_action_families=["FINANCIAL_CONTROL"],
+            )
+        ],
+        diagnosis=DiagnosisSummaryRead(
+            strongest_areas=["Market & Offer Strength"],
+            weakest_areas=["Financial Control & Cash Discipline"],
+            primary_bottleneck="Financial visibility is too weak for confident decisions",
+            top_constraints=["Financial visibility is too weak for confident decisions"],
+            root_cause_patterns=["Improve financial control is recurring across the diagnosis."],
+        ),
+        issue_candidates=[],
+        top_priorities=[
+            PriorityRead(
+                issue_code="FINANCE_VISIBILITY_GAP",
+                title="Financial visibility is too weak for confident decisions",
+                recommended_action_family="FINANCIAL_CONTROL",
+                adjusted_priority_score=78,
+                why_selected="This issue combines high severity and urgency with a practical stabilization action.",
+                sequencing_notes=["Start with the minimum control or visibility change needed to create traction."],
+                dependencies=["A basic weekly cash review rhythm"],
+                critical_risk_links=["CRITICAL_CASH_PRESSURE"],
+                suggested_success_metrics=["Weekly cash position updated on time"],
+            )
+        ],
+        watchlist=[
+            WatchlistItemRead(
+                issue_code="MARKET_OFFER_GAP",
+                title="The offer is not clear enough to the market",
+                recommended_action_family="PIPELINE_DISCIPLINE",
+                adjusted_priority_score=52,
+                watchlist_reason="This issue matters, but it sits behind the selected top priorities for now.",
+                critical_risk_links=[],
+            )
+        ],
+        roadmap_inputs=RoadmapInputPackageRead(
+            selected_action_families=["FINANCIAL_CONTROL"],
+            dependencies=["A basic weekly cash review rhythm"],
+            feasibility_context=["Current feasibility for FINANCIAL_CONTROL is shaped by the business's available time, budget, and openness to simple tooling or support."],
+            suggested_success_metrics=["Weekly cash position updated on time"],
+            sequencing_notes=["Start with the minimum control or visibility change needed to create traction."],
+            items=[
+                RoadmapInputItemRead(
+                    issue_code="FINANCE_VISIBILITY_GAP",
+                    action_family="FINANCIAL_CONTROL",
+                    dependencies=["A basic weekly cash review rhythm"],
+                    feasibility_context="Current feasibility for FINANCIAL_CONTROL is shaped by the business's available time, budget, and openness to simple tooling or support.",
+                    suggested_success_metrics=["Weekly cash position updated on time"],
+                    sequencing_notes=["Start with the minimum control or visibility change needed to create traction."],
+                )
+            ],
+        ),
+        text_interpretation=TextInterpretationSnapshot(
+            status="not_requested",
+            prompt_version="v2.0.0-interpretation-placeholder",
+            provider_name="disabled",
+            outputs=[
+                TextInterpretationOutput(
+                    question_key="finance_surprise_notes",
+                    section_key="financial_control_cash_discipline",
+                )
+            ],
         ),
         explainability=ExplainabilitySnapshot(),
         created_at="2026-04-23T12:00:00+00:00",
@@ -434,6 +527,258 @@ class ScoringHelpersTests(unittest.TestCase):
         self.assertIn("Some answers appear internally inconsistent.", confidence.key_limitations)
 
 
+class DiagnosisEngineTests(unittest.TestCase):
+    def build_context(self, *, profile: BusinessProfileV2Read | None = None, assessment: AssessmentRead | None = None) -> DiagnosisContext:
+        current_profile = profile or sample_profile()
+        current_assessment = assessment or build_submitted_assessment(current_profile)
+        snapshot = current_assessment.latest_definition_snapshot or {}
+        section_titles = {
+            section["sectionId"]: section["title"]
+            for section in snapshot.get("sections", [])
+            if section.get("isCore")
+        }
+        question_map = {}
+        for section in snapshot.get("sections", []):
+            for item in section.get("questions", []):
+                question_map[item["questionId"]] = SimpleNamespace(
+                    question_id=item["questionId"],
+                    section_id=item["applicability"]["sectionId"],
+                    question_type=item["questionType"],
+                    scale_key=item.get("scaleKey"),
+                    bucket=item["bucket"],
+                    essential=item.get("essential", False),
+                    scored=item.get("scored", False),
+                )
+        summary, explainability, _ = run_deterministic_scoring(
+            ScoreContext(
+                answers=current_assessment.answers,
+                question_map=question_map,
+                section_titles=section_titles,
+                module_parent_map={
+                    module["moduleId"]: module["parentSectionKey"]
+                    for module in snapshot.get("adaptiveModules", [])
+                },
+                section_question_ids={
+                    section["sectionId"]: [item["questionId"] for item in section.get("questions", [])]
+                    for section in snapshot.get("sections", [])
+                },
+            )
+        )
+        return DiagnosisContext(
+            profile=current_profile,
+            summary=summary,
+            answers=current_assessment.answers,
+            question_map=question_map,
+            section_titles=section_titles,
+            explainability=explainability,
+        )
+
+    def test_critical_risk_generation_and_issue_triggers(self) -> None:
+        profile = sample_profile(credit_sales_exposure="high")
+        assessment = build_submitted_assessment(profile).model_copy(
+            update={
+                "answers": [
+                    *[answer for answer in build_submitted_assessment(profile).answers if answer.question_id not in {"risk_cash_pressure_check", "collections_follow_up_visibility"}],
+                    AssessmentAnswerRead(
+                        question_id="risk_cash_pressure_check",
+                        section_id="critical_risk_checks",
+                        module_id=None,
+                        answer_type="select",
+                        response_kind="answered",
+                        value="yes",
+                        is_sufficient_answer=True,
+                        order_index=40,
+                    ),
+                    AssessmentAnswerRead(
+                        question_id="collections_follow_up_visibility",
+                        section_id="credit_collections",
+                        module_id="credit_collections",
+                        answer_type="select",
+                        response_kind="answered",
+                        value="not_visible",
+                        is_sufficient_answer=True,
+                        order_index=41,
+                    ),
+                ]
+            }
+        )
+        context = self.build_context(profile=profile, assessment=assessment)
+
+        critical_risks = materialize_critical_risks(context)
+        issues = generate_issue_candidates(context, critical_risks)
+
+        self.assertTrue(any(risk.code == "CRITICAL_CASH_PRESSURE" for risk in critical_risks))
+        self.assertTrue(any(risk.code == "CRITICAL_COLLECTIONS_STRAIN" for risk in critical_risks))
+        self.assertTrue(any(issue.issue_code == "REACTIVE_CASH_MANAGEMENT" for issue in issues))
+        self.assertTrue(any(issue.issue_code == "OVERDUE_RECEIVABLES_TRAP" for issue in issues))
+
+    def test_priority_overrides_and_limits(self) -> None:
+        context = self.build_context(profile=sample_profile())
+        issues = [
+            IssueCandidateRead(
+                issue_code="REACTIVE_CASH_MANAGEMENT",
+                title="Cash management is still reactive",
+                dimension="finance",
+                evidence_question_ids=["risk_cash_pressure_check"],
+                evidence_summary="Cash pressure is active.",
+                severity_score=92,
+                urgency_score=90,
+                impact_score=88,
+                feasibility_score=70,
+                leverage_score=82,
+                confidence_score=78,
+                critical_risk_links=["CRITICAL_CASH_PRESSURE"],
+                recommended_action_family="FINANCIAL_CONTROL",
+                dependencies=["A visible short-term cash view"],
+                goal_fit_adjustment=1.0,
+                priority_score=84,
+                adjusted_priority_score=84,
+            ),
+            IssueCandidateRead(
+                issue_code="SALES_PIPELINE_WEAKNESS",
+                title="Sales execution is not reliably repeatable",
+                dimension="revenue",
+                evidence_question_ids=["revenue_sales_pipeline_repeatability"],
+                evidence_summary="Revenue repeatability is weak.",
+                severity_score=86,
+                urgency_score=84,
+                impact_score=87,
+                feasibility_score=72,
+                leverage_score=75,
+                confidence_score=76,
+                critical_risk_links=[],
+                recommended_action_family="PIPELINE_DISCIPLINE",
+                dependencies=["A visible lead and follow-up list"],
+                goal_fit_adjustment=1.1,
+                priority_score=82,
+                adjusted_priority_score=90.2,
+            ),
+            IssueCandidateRead(
+                issue_code="MANAGEMENT_VISIBILITY_GAP",
+                title="Management control and review rhythms are too weak",
+                dimension="management",
+                evidence_question_ids=["management_priority_clarity"],
+                evidence_summary="Review cadence and decision visibility are weak.",
+                severity_score=74,
+                urgency_score=72,
+                impact_score=73,
+                feasibility_score=69,
+                leverage_score=78,
+                confidence_score=71,
+                critical_risk_links=[],
+                recommended_action_family="ACCOUNTABILITY_RHYTHMS",
+                dependencies=["A simple weekly management review"],
+                goal_fit_adjustment=1.0,
+                priority_score=73,
+                adjusted_priority_score=73,
+            ),
+            IssueCandidateRead(
+                issue_code="MARKET_OFFER_GAP",
+                title="The offer is not clear enough to the market",
+                dimension="market",
+                evidence_question_ids=["market_offer_clarity"],
+                evidence_summary="Offer clarity is mixed.",
+                severity_score=60,
+                urgency_score=55,
+                impact_score=58,
+                feasibility_score=72,
+                leverage_score=55,
+                confidence_score=32,
+                critical_risk_links=[],
+                recommended_action_family="PIPELINE_DISCIPLINE",
+                dependencies=["A clearer description of the main offer"],
+                goal_fit_adjustment=1.1,
+                priority_score=57,
+                adjusted_priority_score=62.7,
+            ),
+            IssueCandidateRead(
+                issue_code="GROWTH_BLOCKER_UNRESOLVED",
+                title="A major growth blocker is unresolved",
+                dimension="revenue",
+                evidence_question_ids=["revenue_target_confidence"],
+                evidence_summary="A bottleneck still limits growth.",
+                severity_score=76,
+                urgency_score=74,
+                impact_score=80,
+                feasibility_score=30,
+                leverage_score=70,
+                confidence_score=74,
+                critical_risk_links=[],
+                recommended_action_family="CONSTRAINT_REMOVAL",
+                dependencies=["Clarity on the single growth constraint"],
+                goal_fit_adjustment=1.1,
+                priority_score=70,
+                adjusted_priority_score=77,
+            ),
+        ]
+        critical_risks = [
+            CriticalRiskRead(
+                code="CRITICAL_CASH_PRESSURE",
+                title="Cash pressure is acute enough to threaten normal operations",
+                severity="critical",
+                evidence_question_ids=["risk_cash_pressure_check"],
+                evidence_summary="Cash pressure is active.",
+                recommended_action_families=["FINANCIAL_CONTROL"],
+            )
+        ]
+
+        top_priorities, watchlist, diagnosis, roadmap_inputs = rank_priorities(context, issues, critical_risks)
+
+        self.assertEqual(len(top_priorities), 3)
+        self.assertLessEqual(len(watchlist), 2)
+        self.assertEqual(top_priorities[0].issue_code, "REACTIVE_CASH_MANAGEMENT")
+        self.assertTrue(any(item.issue_code == "MARKET_OFFER_GAP" for item in watchlist))
+        self.assertTrue(any(item.issue_code == "GROWTH_BLOCKER_UNRESOLVED" for item in watchlist))
+        self.assertEqual(diagnosis.primary_bottleneck, top_priorities[0].title)
+        self.assertGreaterEqual(len(roadmap_inputs.items), 1)
+
+    def test_goal_fit_adjustment_changes_priority_order_carefully(self) -> None:
+        growth_profile = sample_profile()
+        growth_context = self.build_context(profile=growth_profile)
+        cash_issue = IssueCandidateRead(
+            issue_code="FINANCE_VISIBILITY_GAP",
+            title="Financial visibility is too weak for confident decisions",
+            dimension="finance",
+            evidence_question_ids=["finance_reporting_rhythm"],
+            evidence_summary="Finance visibility is weak.",
+            severity_score=75,
+            urgency_score=70,
+            impact_score=78,
+            feasibility_score=68,
+            leverage_score=72,
+            confidence_score=70,
+            critical_risk_links=[],
+            recommended_action_family="FINANCIAL_CONTROL",
+            dependencies=["A basic weekly cash review rhythm"],
+            goal_fit_adjustment=0.9,
+            priority_score=72,
+            adjusted_priority_score=64.8,
+        )
+        growth_issue = IssueCandidateRead(
+            issue_code="SALES_PIPELINE_WEAKNESS",
+            title="Sales execution is not reliably repeatable",
+            dimension="revenue",
+            evidence_question_ids=["revenue_sales_pipeline_repeatability"],
+            evidence_summary="Revenue repeatability is weak.",
+            severity_score=72,
+            urgency_score=68,
+            impact_score=74,
+            feasibility_score=66,
+            leverage_score=70,
+            confidence_score=70,
+            critical_risk_links=[],
+            recommended_action_family="PIPELINE_DISCIPLINE",
+            dependencies=["A visible lead and follow-up list"],
+            goal_fit_adjustment=1.1,
+            priority_score=70,
+            adjusted_priority_score=77,
+        )
+
+        top_priorities, _, _, _ = rank_priorities(growth_context, [cash_issue, growth_issue], [])
+
+        self.assertEqual(top_priorities[0].issue_code, "SALES_PIPELINE_WEAKNESS")
+
+
 class AnalysisServiceTests(unittest.TestCase):
     def test_analysis_service_persists_snapshot_payload_and_returns_serializable_output(self) -> None:
         profile = sample_profile()
@@ -455,7 +800,13 @@ class AnalysisServiceTests(unittest.TestCase):
         self.assertIn("profileSnapshot", repository.created_record.snapshot_payload)
         self.assertIn("assessmentSnapshot", repository.created_record.snapshot_payload)
         self.assertIn("deterministicScores", repository.created_record.snapshot_payload)
+        self.assertIn("issueCandidates", repository.created_record.snapshot_payload)
+        self.assertIn("topPriorities", repository.created_record.snapshot_payload)
+        self.assertIn("roadmapInputs", repository.created_record.snapshot_payload)
         self.assertIn("overallHealthScore", dumped["summary"])
+        self.assertIn("topPriorities", repository.created_record.snapshot_payload)
+        self.assertLessEqual(len(dumped["topPriorities"]), 3)
+        self.assertLessEqual(len(dumped["watchlist"]), 2)
 
 
 class AnalysisV2RouteTests(unittest.TestCase):

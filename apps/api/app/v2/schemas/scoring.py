@@ -3,7 +3,16 @@ from enum import StrEnum
 from pydantic import Field
 
 from app.v2.common import V2BaseModel
+from app.v2.schemas.diagnosis import (
+    CriticalRiskRead,
+    DiagnosisSummaryRead,
+    IssueCandidateRead,
+    PriorityRead,
+    RoadmapInputPackageRead,
+    WatchlistItemRead,
+)
 from app.v2.schemas.explainability import ExplainabilitySnapshot
+from app.v2.schemas.snapshots import TextInterpretationSnapshot
 from app.v2.schemas.lifecycle import AnalysisLifecycleState
 from app.v2.schemas.meta import V2VersionMetadata
 
@@ -89,5 +98,12 @@ class AnalysisRunRead(V2BaseModel):
     metadata: V2VersionMetadata
     lifecycle: AnalysisLifecycleState
     summary: AnalysisScoreSummary
+    critical_risks: list[CriticalRiskRead] = Field(default_factory=list, max_length=10)
+    diagnosis: DiagnosisSummaryRead = Field(default_factory=DiagnosisSummaryRead)
+    issue_candidates: list[IssueCandidateRead] = Field(default_factory=list, max_length=20)
+    top_priorities: list[PriorityRead] = Field(default_factory=list, max_length=3)
+    watchlist: list[WatchlistItemRead] = Field(default_factory=list, max_length=2)
+    roadmap_inputs: RoadmapInputPackageRead = Field(default_factory=RoadmapInputPackageRead)
+    text_interpretation: TextInterpretationSnapshot = Field(default_factory=TextInterpretationSnapshot)
     explainability: ExplainabilitySnapshot
     created_at: str

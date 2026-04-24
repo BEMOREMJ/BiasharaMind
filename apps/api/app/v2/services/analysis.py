@@ -5,8 +5,23 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from app.v2.schemas.assessment import AssessmentRead
+from app.v2.schemas.lifecycle import (
+    AIInterpretationStatus,
+    FreshnessState,
+    RerunReason,
+    RerunRequirement,
+)
 from app.v2.schemas.meta import CURRENT_V2_VERSION_METADATA
 from app.v2.schemas.scoring import AnalysisRunRead
+from app.v2.services.ai_interpretation import get_ai_text_interpretation_service
+from app.v2.services.diagnosis import (
+    DiagnosisContext,
+    build_priority_rationales,
+    build_watchlist_rationales,
+    generate_issue_candidates,
+    materialize_critical_risks,
+    rank_priorities,
+)
 from app.v2.services.scoring import ScoreContext, run_deterministic_scoring
 
 if TYPE_CHECKING:
@@ -29,9 +44,32 @@ def _question_view(question: dict[str, Any]) -> Any:
     payload["question_type"] = question.get("questionType")
     payload["essential"] = question.get("essential", False)
     payload["scored"] = question.get("scored", False)
+    payload["interpretation_enabled"] = question.get(
+        "interpretationEnabled",
+        question.get("questionType") in {"text", "textarea"},
+    )
     payload["bucket"] = question.get("bucket")
     payload["question_id"] = question.get("questionId")
+    payload["prompt"] = question.get("prompt")
+    payload["tags"] = question.get("tags", [])
     return type("QuestionView", (), payload)()
+
+
+def _apply_interpretation_status(lifecycle: Any, interpretation_snapshot: Any) -> Any:
+    lifecycle.ai_interpretation_status = interpretation_snapshot.status
+    if interpretation_snapshot.status in {AIInterpretationStatus.PARTIAL, AIInterpretationStatus.FALLBACK_USED}:
+        if lifecycle.freshness_status == FreshnessState.FRESH:
+            lifecycle.freshness_status = FreshnessState.AI_INTERPRETATION_PARTIAL
+        lifecycle.rerun_requirement = RerunRequirement.RECOMMENDED
+        lifecycle.rerun_reason = RerunReason.AI_INTERPRETATION_INCOMPLETE
+        lifecycle.stale_explanation = (
+            "AI text interpretation was only partially available. Deterministic scoring is still valid, but text-based evidence is incomplete."
+        )
+    elif interpretation_snapshot.status == AIInterpretationStatus.COMPLETE:
+        lifecycle.ai_interpretation_status = AIInterpretationStatus.COMPLETE
+    else:
+        lifecycle.ai_interpretation_status = interpretation_snapshot.status
+    return lifecycle
 
 
 class AnalysisV2Service:
@@ -98,16 +136,69 @@ class AnalysisV2Service:
                 section_question_ids=section_question_ids,
             )
         )
+        critical_risks = materialize_critical_risks(
+            DiagnosisContext(
+                profile=profile,
+                summary=summary,
+                answers=assessment.answers,
+                question_map=question_map,
+                section_titles=section_titles,
+                explainability=explainability,
+            )
+        )
+        issue_candidates = generate_issue_candidates(
+            DiagnosisContext(
+                profile=profile,
+                summary=summary,
+                answers=assessment.answers,
+                question_map=question_map,
+                section_titles=section_titles,
+                explainability=explainability,
+            ),
+            critical_risks,
+        )
+        top_priorities, watchlist, diagnosis, roadmap_inputs = rank_priorities(
+            DiagnosisContext(
+                profile=profile,
+                summary=summary,
+                answers=assessment.answers,
+                question_map=question_map,
+                section_titles=section_titles,
+                explainability=explainability,
+            ),
+            issue_candidates,
+            critical_risks,
+        )
+        interpretation_snapshot = get_ai_text_interpretation_service().interpret(
+            profile=profile,
+            assessment=assessment,
+            question_map=question_map,
+        )
+        explainability = get_ai_text_interpretation_service().apply_to_explainability(
+            explainability,
+            interpretation_snapshot,
+        )
+        lifecycle = _apply_interpretation_status(lifecycle, interpretation_snapshot)
+        explainability.priority_rationales = build_priority_rationales(top_priorities, critical_risks)
+        explainability.watchlist_rationales = build_watchlist_rationales(watchlist)
         metadata = CURRENT_V2_VERSION_METADATA.model_copy(
             update={
                 "scoring_version": "v2.0.0-deterministic-foundation",
-                "analysis_engine_version": "v2.0.0-scoring-foundation",
+                "prompt_version": interpretation_snapshot.prompt_version,
+                "analysis_engine_version": "v2.0.0-ai-interpretation-foundation",
             }
         )
         payload = {
             "metadata": metadata.model_dump(mode="json", by_alias=True),
             "lifecycle": lifecycle.model_dump(mode="json", by_alias=True),
             "deterministicScores": summary.model_dump(mode="json", by_alias=True),
+            "criticalRisks": [item.model_dump(mode="json", by_alias=True) for item in critical_risks],
+            "diagnosis": diagnosis.model_dump(mode="json", by_alias=True),
+            "issueCandidates": [item.model_dump(mode="json", by_alias=True) for item in issue_candidates],
+            "topPriorities": [item.model_dump(mode="json", by_alias=True) for item in top_priorities],
+            "watchlist": [item.model_dump(mode="json", by_alias=True) for item in watchlist],
+            "roadmapInputs": roadmap_inputs.model_dump(mode="json", by_alias=True),
+            "textInterpretation": interpretation_snapshot.model_dump(mode="json", by_alias=True),
             "explainability": explainability.model_dump(mode="json", by_alias=True),
             "profileSnapshot": profile.model_dump(mode="json", by_alias=True),
             "assessmentSnapshot": assessment.model_dump(mode="json", by_alias=True),

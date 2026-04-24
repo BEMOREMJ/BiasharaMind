@@ -49,6 +49,7 @@ class AssessmentQuestionDefinition(V2BaseModel):
     prompt: str = Field(min_length=1, max_length=320)
     question_type: str = Field(min_length=1, max_length=32)
     scale_key: str | None = Field(default=None, max_length=64)
+    interpretation_enabled: bool = False
     answer_spec: QuestionAnswerSpec
     essential: bool = False
     scored: bool = True

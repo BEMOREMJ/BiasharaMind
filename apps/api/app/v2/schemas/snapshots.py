@@ -3,7 +3,7 @@ from pydantic import Field
 from app.v2.common import V2BaseModel
 from app.v2.schemas.explainability import ExplainabilitySnapshot
 from app.v2.schemas.interpretation import TextInterpretationInput, TextInterpretationOutput
-from app.v2.schemas.lifecycle import AnalysisLifecycleState
+from app.v2.schemas.lifecycle import AIInterpretationStatus, AnalysisLifecycleState
 from app.v2.schemas.meta import V2VersionMetadata
 
 
@@ -31,6 +31,9 @@ class AssessmentSubmissionSnapshot(V2BaseModel):
 
 
 class TextInterpretationSnapshot(V2BaseModel):
+    status: AIInterpretationStatus = AIInterpretationStatus.NOT_REQUESTED
+    prompt_version: str | None = Field(default=None, max_length=64)
+    provider_name: str | None = Field(default=None, max_length=64)
     inputs: list[TextInterpretationInput] = Field(default_factory=list, max_length=200)
     outputs: list[TextInterpretationOutput] = Field(default_factory=list, max_length=200)
 
